@@ -1,13 +1,13 @@
 {
-  "name": "Mathe-Zoo",
-  "short_name": "Mathe-Zoo",
+  "name": "Zahlenwelten",
+  "short_name": "Zahlenwelten",
   "lang": "de",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#fdf6e3",
-  "theme_color": "#3a9d5d",
+  "background_color": "#2f2822",
+  "theme_color": "#2f2822",
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },

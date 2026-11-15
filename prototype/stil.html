@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stilprobe</title>
+<style>
+  :root { --ink: #3b2f24; --paper: #e6dcc0; --rust: #a65a2e; --moss: #6f7d4a; --teal: #4f7a78; --ochre: #c9a24a; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; background: #2f2822; color: var(--paper); font-family: "Chalkboard SE", "Bradley Hand", "Marker Felt", "Comic Sans MS", cursive; padding: 14px 16px 40px; }
+  header { max-width: 900px; margin: 0 auto 10px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  header h1 { font-size: 1.15rem; margin: 0; flex: 1; font-weight: 400; opacity: .8; }
+  .tab { font: inherit; font-size: 1.05rem; color: var(--paper); background: transparent; border: 2px solid #6b5d4f; padding: 6px 16px; border-radius: 14px 20px 12px 18px / 18px 12px 20px 14px; cursor: pointer; }
+  .tab.on { background: var(--paper); color: var(--ink); border-color: var(--paper); }
+  .stage { max-width: 900px; margin: 0 auto; display: none; }
+  .stage.on { display: block; }
+  .frame { background: var(--paper); padding: 8px; border-radius: 10px 16px 12px 18px / 16px 10px 18px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.5); }
+  svg.scene { display: block; width: 100%; height: auto; border-radius: 6px; }
+  .panel { margin-top: 10px; background: var(--paper); color: var(--ink); border-radius: 14px 10px 18px 12px / 10px 18px 12px 16px; padding: 12px 16px 16px; text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,.4); }
+  .panel .who { font-size: .95rem; opacity: .75; min-height: 1.4em; }
+  .panel .q { font-size: 2.3rem; margin: 2px 0 10px; letter-spacing: 1px; }
+  .answers { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .ans { font: inherit; font-size: 1.8rem; color: var(--ink); min-width: 110px; padding: 8px 18px; background: #d3c5a0; border: 2.5px solid var(--ink); border-radius: 16px 22px 14px 20px / 20px 14px 22px 16px; box-shadow: 3px 4px 0 var(--ink); cursor: pointer; transition: transform .08s; }
+  .ans:nth-child(2) { border-radius: 22px 14px 20px 16px / 14px 22px 16px 20px; transform: rotate(-1deg); }
+  .ans:nth-child(3) { transform: rotate(1.2deg); }
+  .ans:active { transform: translate(2px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .ans.no { animation: shake .35s; background: #d9a590; }
+  .again { font: inherit; font-size: 1.2rem; margin-top: 6px; padding: 6px 18px; background: var(--teal); color: #fff; border: 0; border-radius: 16px 22px 14px 20px / 20px 14px 22px 16px; cursor: pointer; }
+  @keyframes shake { 25% { transform: translateX(-7px); } 75% { transform: translateX(7px); } }
+
+  /* gemeinsame Zeichen-Stile */
+  .art { stroke: var(--ink); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; fill: none; }
+  .thin { stroke-width: 1.3; opacity: .6; }
+  .bob { animation: bob 2.6s ease-in-out infinite; }
+  .waddle { animation: waddle 1.4s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+  .swing { animation: swing 2.2s ease-in-out infinite; transform-origin: 22px -24px; }
+  .blink { animation: blink 4s infinite; transform-box: fill-box; transform-origin: center; }
+  .bulb { animation: pulse 1.6s ease-in-out infinite; }
+  .hop { animation: hop .5s ease 3; }
+  @keyframes bob { 50% { transform: translateY(-2.5px); } }
+  @keyframes waddle { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg); } }
+  @keyframes swing { 0%, 100% { transform: rotate(-7deg); } 50% { transform: rotate(7deg); } }
+  @keyframes blink { 0%, 46%, 50%, 100% { transform: scaleY(1); } 48% { transform: scaleY(.1); } }
+  @keyframes pulse { 50% { opacity: .35; } }
+  @keyframes hop { 50% { transform: translateY(-16px); } }
+  @keyframes puff { 0% { transform: translateY(0) scale(.6); opacity: 0; } 20% { opacity: .7; } 100% { transform: translateY(-46px) scale(1.5); opacity: 0; } }
+  @keyframes floaty { 50% { transform: translateY(-8px) rotate(3deg); } }
+
+  .lamp { fill: #7d7361; transition: fill .5s; }
+  .step1 .l1, .step2 .l1, .step3 .l1, .step2 .l2, .step3 .l2, .step3 .l3 { fill: #f8cf55; }
+  .halo { opacity: 0; transition: opacity .6s; }
+  .step1 .h1, .step2 .h1, .step3 .h1, .step2 .h2, .step3 .h2, .step3 .h3 { opacity: .55; }
+
+  /* Expedition */
+  #s-exp .gate { transform: translateY(calc(var(--s) * -68px)); transition: transform 1.3s cubic-bezier(.5, 0, .3, 1); }
+  #s-exp .ga { transform: rotate(calc(var(--s) * 120deg)); transition: transform 1.3s; }
+  #s-exp .gb { transform: rotate(calc(var(--s) * -146deg)); transition: transform 1.3s; }
+  #s-exp .treasure { opacity: 0; transition: opacity .8s 1s; }
+  #s-exp.step3 .treasure { opacity: 1; }
+  #s-exp.step3 .treasure .piece { animation: floaty 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+
+  /* Zoo */
+  #s-zoo .giraffe { transform: translateY(calc(172px - var(--s) * 57.3px)); transition: transform 1.2s cubic-bezier(.3, 1.5, .5, 1); }
+  #s-zoo .water { transform-box: fill-box; transform-origin: 50% 100%; transform: scaleY(calc(.06 + var(--s) * .31)); transition: transform 1.2s; }
+  #s-zoo .wheel { transform: rotate(calc(var(--s) * 200deg)); transition: transform 1.2s; }
+  #s-zoo .wing { transform-box: fill-box; transition: transform 1.4s cubic-bezier(.5, 0, .3, 1) .3s; }
+  #s-zoo .wingL { transform-origin: 0 50%; }
+  #s-zoo .wingR { transform-origin: 100% 50%; }
+  #s-zoo.step3 .wing { transform: scaleX(.14); }
+  #s-zoo .plate { transform-box: fill-box; transform-origin: 50% 0; transform: rotate(24deg); transition: transform 1s cubic-bezier(.3, 1.8, .5, 1) .6s; }
+  #s-zoo.step3 .plate { transform: rotate(0); }
+  #s-zoo .puff { opacity: 0; transform-box: fill-box; transform-origin: center; }
+  #s-zoo.step1 .puff, #s-zoo.step2 .puff, #s-zoo.step3 .puff { animation: puff 2.4s ease-out infinite; }
+  #s-zoo .puff.p2 { animation-delay: 1.2s !important; }
+  #s-zoo .heart { opacity: 0; transition: opacity .5s 1.4s; }
+  #s-zoo.step3 .heart { opacity: 1; animation: floaty 2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Stilprobe · handgezeichnet, die Aufgaben bewegen die Szene</h1>
+  <button class="tab on" data-t="zoo">Der vergessene Zoo</button>
+  <button class="tab" data-t="exp">Die verschollene Stadt</button>
+</header>
+
+<!-- gemeinsame Filter -->
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="5"/>
+    </filter>
+    <filter id="wob2" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3"/>
+    </filter>
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16"/></filter>
+    <filter id="glowf" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="paper" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="2"/>
+      <feColorMatrix values="0 0 0 0 .30  0 0 0 0 .22  0 0 0 0 .14  .75 0 0 0 -.18"/>
+    </filter>
+    <filter id="blot" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="3" seed="11"/>
+      <feColorMatrix values="0 0 0 0 .35  0 0 0 0 .27  0 0 0 0 .16  .9 0 0 0 -.38"/>
+    </filter>
+    <radialGradient id="vig" cx="50%" cy="48%" r="72%">
+      <stop offset="62%" stop-color="#3b2f24" stop-opacity="0"/><stop offset="100%" stop-color="#3b2f24" stop-opacity=".42"/>
+    </radialGradient>
+    <radialGradient id="gold" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffe9a0"/><stop offset="60%" stop-color="#e2a93a" stop-opacity=".7"/><stop offset="100%" stop-color="#e2a93a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>
+
+<!-- ============ ZOO ============ -->
+<section class="stage on" id="st-zoo">
+  <div class="frame">
+  <svg class="scene" id="s-zoo" viewBox="0 0 800 500" style="--s:0">
+    <rect width="800" height="500" fill="#e6dcc0"/>
+    <g filter="url(#soft)" opacity=".8">
+      <ellipse cx="400" cy="70" rx="520" ry="150" fill="#a9c4bd"/>
+      <ellipse cx="400" cy="250" rx="130" ry="90" fill="#efe3b4"/>
+      <ellipse cx="90" cy="300" rx="190" ry="110" fill="#8fa06a"/>
+      <ellipse cx="720" cy="290" rx="190" ry="110" fill="#7f956a"/>
+      <ellipse cx="400" cy="480" rx="520" ry="85" fill="#b59a6a"/>
+    </g>
+    <!-- Bäume hinten -->
+    <g class="art" filter="url(#wob)">
+      <path d="M-10 255 Q10 150 70 175 Q100 105 160 150 Q215 150 215 215 Q250 230 240 262 L-10 262Z" fill="#6f7d4a" fill-opacity=".75"/>
+      <path d="M560 262 Q548 215 592 200 Q600 130 668 150 Q720 105 762 165 Q812 170 812 262Z" fill="#5f7350" fill-opacity=".75"/>
+      <path class="thin" d="M60 200 q14 -12 26 2 M120 180 q12 -10 24 4 M640 190 q14 -12 26 2 M716 176 q12 -10 22 4"/>
+    </g>
+    <!-- Lichterkette -->
+    <g class="art" filter="url(#wob)">
+      <path d="M40 62 Q250 124 400 60 Q560 112 760 56" stroke-width="1.6"/>
+      <g transform="translate(240,93)"><path d="M0 0 V10"/><circle class="halo h1" cy="24" r="22" fill="url(#gold)" stroke="none"/><rect x="-8" y="10" width="16" height="24" rx="5" fill="#5a5148"/><circle class="lamp l1" cy="23" r="5.5"/></g>
+      <g transform="translate(400,61)"><path d="M0 0 V10"/><circle class="halo h2" cy="24" r="22" fill="url(#gold)" stroke="none"/><rect x="-8" y="10" width="16" height="24" rx="5" fill="#5a5148"/><circle class="lamp l2" cy="23" r="5.5"/></g>
+      <g transform="translate(565,85)"><path d="M0 0 V10"/><circle class="halo h3" cy="24" r="22" fill="url(#gold)" stroke="none"/><rect x="-8" y="10" width="16" height="24" rx="5" fill="#5a5148"/><circle class="lamp l3" cy="23" r="5.5"/></g>
+    </g>
+    <!-- Giraffe (hinter der Mauer) -->
+    <defs><clipPath id="above"><rect width="800" height="346"/></clipPath></defs>
+    <g clip-path="url(#above)"><g class="giraffe"><g class="art" filter="url(#wob2)">
+      <path d="M588 420 Q596 240 613 158 L642 160 Q642 250 654 420Z" fill="#dcae55"/>
+      <path d="M602 250 q10 -8 16 4 q-4 12 -14 8Z M626 215 q9 -5 12 6 q-5 9 -12 4Z M606 310 q12 -6 18 6 q-6 12 -18 6Z M630 280 q8 -4 12 6 q-6 8 -12 2Z M618 180 q7 -4 10 4 q-4 7 -10 3Z" fill="#9a6630" stroke-width="1.4"/>
+      <path d="M606 132 Q590 118 584 128 Q590 142 608 142Z" fill="#dcae55"/>
+      <path d="M619 122 L614 98 M637 119 L640 95"/>
+      <circle cx="614" cy="96" r="5" fill="#7a4f28"/><circle cx="640" cy="93" r="5" fill="#7a4f28"/>
+      <ellipse cx="630" cy="138" rx="29" ry="21" transform="rotate(-12 630 138)" fill="#dcae55"/>
+      <ellipse cx="655" cy="148" rx="18" ry="12.5" transform="rotate(-8 655 148)" fill="#ecd29a"/>
+      <circle class="blink" cx="634" cy="131" r="4" fill="#3b2f24"/>
+      <path d="M660 144 l1.5 1 M648 154 q8 5 16 0" stroke-width="1.8"/>
+      <ellipse cx="620" cy="146" rx="5" ry="3" fill="#e8a08a" stroke="none" opacity=".7"/>
+    </g>
+    <path class="heart" d="M690 96 q-10 -14 -18 -4 q-6 10 18 26 q24 -16 18 -26 q-8 -10 -18 4Z" fill="#c9584e" stroke="#3b2f24" stroke-width="2"/>
+    </g></g>
+    <!-- Mauer -->
+    <g class="art" filter="url(#wob)">
+      <path d="M-10 252 Q160 240 300 250 L300 345 L-10 345Z" fill="#b8866a"/>
+      <path d="M500 250 Q650 240 810 252 L810 345 L500 345Z" fill="#b8866a"/>
+      <path class="thin" d="M-10 276 H300 M-10 300 H300 M-10 324 H300 M40 252 V276 M110 252 V276 M190 250 V276 M250 250 V276 M70 276 V300 M150 276 V300 M230 276 V300 M30 300 V324 M120 300 V324 M200 300 V324 M270 300 V324 M500 276 H810 M500 300 H810 M500 324 H810 M560 250 V276 M700 246 V276 M770 250 V276 M530 276 V300 M680 276 V300 M750 276 V300 M580 300 V324 M720 300 V324"/>
+      <path d="M-10 250 Q10 232 34 246 Q52 228 78 244 Q92 262 70 280 Q40 300 20 280 Q-4 290 -10 270Z" fill="#6f7d4a"/>
+      <path d="M700 248 Q716 226 742 240 Q768 226 790 244 Q812 250 812 300 Q790 312 772 294 Q748 304 730 284 Q704 280 700 248Z" fill="#647a4c"/>
+      <!-- Weg hinter dem Tor -->
+      <path d="M328 345 L386 268 H414 L472 345Z" fill="#dccb9c" stroke-width="1.4"/>
+      <path class="thin" d="M372 300 h18 M400 322 h22 M392 284 h14"/>
+      <!-- Pfeiler -->
+      <path d="M284 345 V192 H322 V345Z M478 345 V192 H516 V345Z" fill="#a8775c"/>
+      <path d="M277 192 H329 L321 178 H285Z M471 192 H523 L515 178 H479Z" fill="#96684f"/>
+      <path class="thin" d="M284 230 H322 M284 268 H322 M284 306 H322 M478 230 H516 M478 268 H516 M478 306 H516"/>
+      <!-- Bogen -->
+      <path d="M303 180 Q400 78 497 180" stroke-width="5.5" stroke="#3a3430"/>
+      <path d="M303 196 Q400 104 497 196" stroke-width="2"/>
+      <path class="thin" d="M330 163 V150 M365 140 V124 M435 140 V124 M470 163 V150"/>
+    </g>
+    <!-- Schilder -->
+    <g filter="url(#wob2)" font-family="inherit" font-size="22" text-anchor="middle" fill="#3b2f24">
+      <g><path class="art" d="M350 146 V152"/><circle class="art" cx="350" cy="170" r="18" fill="#c9a24a"/><text x="350" y="178">Z</text></g>
+      <g class="plate"><path class="art" d="M400 124 V134"/><circle class="art" cx="400" cy="152" r="18" fill="#c9a24a"/><text x="400" y="160">O</text></g>
+      <g><path class="art" d="M450 146 V152"/><circle class="art" cx="450" cy="170" r="18" fill="#c9a24a"/><text x="450" y="178">O</text></g>
+    </g>
+    <!-- Torflügel -->
+    <g class="wing wingL"><g class="art" filter="url(#wob2)" stroke="#3a3430">
+      <path d="M324 232 Q362 214 400 222 V345 H324Z" fill="#3a3430" fill-opacity=".12" stroke-width="3"/>
+      <path d="M339 226 V345 M354 222 V345 M369 220 V345 M385 220 V345 M324 262 H400 M324 318 H400" stroke-width="2"/>
+    </g></g>
+    <g class="wing wingR"><g class="art" filter="url(#wob2)" stroke="#3a3430">
+      <path d="M476 232 Q438 214 400 222 V345 H476Z" fill="#3a3430" fill-opacity=".12" stroke-width="3"/>
+      <path d="M461 226 V345 M446 222 V345 M431 220 V345 M415 220 V345 M476 262 H400 M476 318 H400" stroke-width="2"/>
+    </g></g>
+    <!-- Boden -->
+    <g class="art" filter="url(#wob)">
+      <path d="M-10 345 H810" stroke-width="2"/>
+      <path class="thin" d="M340 372 q30 -8 60 0 q30 8 60 0 M300 410 q50 -10 100 0 q50 10 100 0 M250 455 q70 -12 150 0 q80 12 150 0"/>
+      <path d="M20 372 q4 -18 8 0 q4 -22 9 0 q5 -16 8 0 M690 380 q4 -18 8 0 q4 -22 9 0 q5 -16 8 0 M600 462 q4 -18 8 0 q4 -22 9 0 M740 440 q4 -16 8 0 q5 -20 9 0" stroke="#55663a"/>
+      <!-- Wassermaschine -->
+      <path d="M160 404 H226 Q248 404 248 424 V436 H300" stroke-width="9" stroke="#6b5d4f"/>
+      <path d="M82 410 V428 M146 410 V428"/>
+      <rect x="68" y="296" width="94" height="116" rx="16" fill="#a65a2e"/>
+      <path d="M68 330 H162 M68 384 H162" stroke-width="1.6"/>
+      <path class="thin" d="M78 306 q30 -6 70 0 M84 398 q10 6 24 2"/>
+      <circle cx="78" cy="322" r="2" fill="#3b2f24"/><circle cx="152" cy="322" r="2" fill="#3b2f24"/><circle cx="78" cy="392" r="2" fill="#3b2f24"/><circle cx="152" cy="392" r="2" fill="#3b2f24"/>
+      <path d="M100 296 V268 H124 V296" fill="#8a4a26"/><path d="M94 268 H130"/>
+      <rect x="172" y="306" width="16" height="96" rx="8" fill="#f1e9d2"/>
+      <path class="thin" d="M176 330 h8 M176 354 h8 M176 378 h8"/>
+    </g>
+    <rect class="water" x="175" y="310" width="10" height="88" rx="5" fill="#5f9aa8" opacity=".9"/>
+    <circle class="puff" cx="112" cy="256" r="9" fill="#f4eede" stroke="#3b2f24" stroke-width="1.4"/>
+    <circle class="puff p2" cx="118" cy="252" r="7" fill="#f4eede" stroke="#3b2f24" stroke-width="1.4"/>
+    <g transform="translate(115,357)"><g class="wheel"><g class="art" filter="url(#wob2)"><circle r="19" fill="#c9a24a" fill-opacity=".9"/><circle r="5" fill="#3b2f24"/><path d="M-19 0 H19 M0 -19 V19 M-13 -13 L13 13 M-13 13 L13 -13" stroke-width="1.8"/></g></g></g>
+    <!-- Tierpfleger-Kind -->
+    <g transform="translate(236,440)"><g class="bob"><g class="art" filter="url(#wob2)">
+      <path d="M-7 0 V14 M7 0 V14 M-12 15 H-4 M4 15 H12" stroke-width="4"/>
+      <path d="M-14 2 Q-17 -34 0 -37 Q17 -34 14 2Z" fill="#4f7a78"/>
+      <path d="M-7 -36 V-22 H7 V-36" stroke-width="1.6"/><circle cx="-7" cy="-21" r="1.6" fill="#c9a24a"/><circle cx="7" cy="-21" r="1.6" fill="#c9a24a"/>
+      <path d="M-13 -24 L-26 -8"/>
+      <path d="M-30 -2 l5 -8 l5 3 l-2 4 l-4 -1 l-2 4Z" fill="#8d8a80" stroke-width="1.6"/>
+      <path d="M13 -24 L22 -10"/>
+      <circle cx="0" cy="-52" r="15.5" fill="#edcfa6"/>
+      <path d="M-15.5 -57 Q-15 -74 0 -74 Q15 -74 15.5 -57Z" fill="#c9584e"/>
+      <path d="M8 -59 Q26 -60 27 -54 L10 -55Z" fill="#a8443c"/>
+      <circle class="blink" cx="-5" cy="-51" r="1.9" fill="#3b2f24"/><circle class="blink" cx="6" cy="-51" r="1.9" fill="#3b2f24"/>
+      <path d="M-4 -44 q5 4 9 0" stroke-width="1.6"/>
+      <ellipse cx="-10" cy="-46" rx="3" ry="2" fill="#e39a86" stroke="none" opacity=".7"/><ellipse cx="11" cy="-46" rx="3" ry="2" fill="#e39a86" stroke="none" opacity=".7"/>
+    </g></g></g>
+    <!-- Ente -->
+    <g transform="translate(548,452)"><g class="waddle"><g class="art" filter="url(#wob2)">
+      <path d="M-4 10 V17 M5 10 V17 M-8 18 H-1 M2 18 H9" stroke="#c97a2e" stroke-width="2.4"/>
+      <path d="M-18 -2 Q-24 -10 -16 -8 Q-10 -16 6 -12 Q18 -8 16 2 Q12 12 -4 12 Q-16 10 -18 -2Z" fill="#f5eedb"/>
+      <circle cx="12" cy="-18" r="9.5" fill="#f5eedb"/>
+      <path d="M19 -20 L30 -17 L20 -13Z" fill="#e0943a"/>
+      <circle class="blink" cx="14" cy="-20" r="1.7" fill="#3b2f24"/>
+      <path d="M4 -27 Q12 -34 21 -26" fill="#4f7a78" stroke-width="1.6"/>
+      <path class="thin" d="M-8 0 q6 5 14 0"/>
+    </g></g></g>
+    <!-- Papier und Rand -->
+    <rect width="800" height="500" filter="url(#blot)" opacity=".5" style="mix-blend-mode:multiply"/>
+    <rect width="800" height="500" filter="url(#paper)" style="mix-blend-mode:multiply"/>
+    <rect width="800" height="500" fill="url(#vig)"/>
+  </svg>
+  </div>
+  <div class="panel" id="p-zoo"></div>
+</section>
+
+<!-- ============ EXPEDITION ============ -->
+<section class="stage" id="st-exp">
+  <div class="frame">
+  <svg class="scene" id="s-exp" viewBox="0 0 800 500" style="--s:0">
+    <defs><clipPath id="door"><path d="M330 422 V252 Q400 190 470 252 V422Z"/></clipPath></defs>
+    <rect width="800" height="500" fill="#e2d6b4"/>
+    <g filter="url(#soft)" opacity=".8">
+      <ellipse cx="130" cy="130" rx="240" ry="160" fill="#7f9166"/>
+      <ellipse cx="680" cy="110" rx="250" ry="160" fill="#6f8a72"/>
+      <ellipse cx="400" cy="50" rx="190" ry="80" fill="#f3e6b6"/>
+      <ellipse cx="400" cy="480" rx="520" ry="90" fill="#9a7b52"/>
+    </g>
+    <g class="art" filter="url(#wob)">
+      <!-- Dschungel -->
+      <path d="M-10 300 Q-6 170 60 190 Q80 110 150 160 Q200 150 205 230 Q230 250 214 300Z" fill="#5f7350" fill-opacity=".8"/>
+      <path d="M590 300 Q572 240 610 215 Q615 130 690 160 Q740 100 790 170 Q815 180 812 300Z" fill="#55694a" fill-opacity=".8"/>
+      <path d="M40 0 Q52 60 36 110 Q30 150 44 180 M90 0 Q80 50 96 90 M735 0 Q724 70 742 120 Q750 150 738 176 M690 0 Q700 40 688 78" stroke="#4c5f3c"/>
+      <path d="M36 110 q-14 -4 -16 8 q12 6 16 -8Z M44 180 q14 -6 18 6 q-12 8 -18 -6Z M96 90 q12 -8 18 2 q-10 10 -18 -2Z M742 120 q14 -6 18 6 q-12 8 -18 -6Z M738 176 q-14 -4 -16 8 q12 6 16 -8Z M688 78 q-12 -6 -16 4 q10 8 16 -4Z" fill="#6f7d4a"/>
+      <!-- Tempel -->
+      <path d="M205 422 L228 132 Q400 58 572 132 L595 422Z" fill="#bcad8c"/>
+      <path class="thin" d="M224 200 H576 M219 270 H330 M470 270 H581 M213 345 H330 M470 345 H587 M300 130 V200 M400 96 V200 M500 130 V200 M262 200 V270 M538 200 V270 M250 270 V345 M552 270 V345 M282 345 V422 M518 345 V422"/>
+      <path class="thin" d="M236 150 q10 14 4 30 M556 300 q-10 16 -2 34 M240 380 q14 6 22 22"/>
+      <path d="M312 422 V246 Q400 168 488 246 V422" stroke-width="3"/>
+      <path d="M330 422 V252 Q400 190 470 252 V422Z" fill="#2a221d"/>
+      <!-- Stufen -->
+      <path d="M176 422 H624 L646 446 H154Z" fill="#a69777"/>
+      <path d="M154 446 H646 L672 476 H128Z" fill="#97896b"/>
+      <path class="thin" d="M250 434 h40 M480 458 h60 M330 460 h30"/>
+      <!-- Ranken am Tempel -->
+      <path d="M560 128 Q574 190 556 240 Q548 280 562 318" stroke="#4c5f3c"/>
+      <path d="M556 240 q16 -6 20 6 q-12 8 -20 -6Z M562 318 q-16 -4 -18 8 q12 6 18 -8Z M568 180 q14 -8 20 2 q-10 10 -20 -2Z" fill="#6f7d4a"/>
+    </g>
+    <!-- Lampen über dem Tor -->
+    <g class="art" filter="url(#wob2)">
+      <circle class="halo h1" cx="352" cy="176" r="22" fill="url(#gold)" stroke="none"/><circle class="halo h2" cx="400" cy="158" r="22" fill="url(#gold)" stroke="none"/><circle class="halo h3" cx="448" cy="176" r="22" fill="url(#gold)" stroke="none"/>
+      <path d="M342 176 l10 -12 l10 12 l-10 12Z M390 158 l10 -12 l10 12 l-10 12Z M438 176 l10 -12 l10 12 l-10 12Z" fill="#8d7f63"/>
+      <circle class="lamp l1" cx="352" cy="176" r="5"/><circle class="lamp l2" cx="400" cy="158" r="5"/><circle class="lamp l3" cx="448" cy="176" r="5"/>
+    </g>
+    <!-- Tor-Inneres -->
+    <g clip-path="url(#door)">
+      <g class="treasure">
+        <circle cx="400" cy="350" r="85" fill="url(#gold)"/>
+        <g class="piece"><g class="art" filter="url(#wob2)">
+          <path d="M372 322 L420 314 L432 352 L412 384 L376 372 L366 344Z" fill="#efdfae"/>
+          <path d="M380 340 q10 -8 18 2 t16 4" stroke-dasharray="3 5" stroke-width="1.8"/>
+          <path d="M408 360 l8 8 M416 360 l-8 8" stroke="#c9584e" stroke-width="2.6"/>
+        </g></g>
+      </g>
+      <g class="gate"><g class="art" filter="url(#wob2)">
+        <rect x="324" y="206" width="152" height="222" fill="#8f8165"/>
+        <path class="thin" d="M324 280 H476 M324 352 H476 M400 206 V280 M362 280 V352 M438 280 V352 M400 352 V428"/>
+        <circle cx="400" cy="316" r="24" fill="#7d7058"/>
+        <path d="M400 298 l5 12 l13 1 l-10 8 l4 13 l-12 -7 l-12 7 l4 -13 l-10 -8 l13 -1Z" fill="#c9a24a" stroke-width="1.6"/>
+      </g></g>
+    </g>
+    <!-- Zahnräder -->
+    <g transform="translate(258,318)"><g class="ga"><g class="art" filter="url(#wob2)"><path class="gearp" data-r="24" data-n="9" fill="#c9a24a"/><circle r="7" fill="#3b2f24"/></g></g></g>
+    <g transform="translate(292,360)"><g class="gb"><g class="art" filter="url(#wob2)"><path class="gearp" data-r="17" data-n="7" fill="#a65a2e"/><circle r="5" fill="#3b2f24"/></g></g></g>
+    <!-- Forscher-Kind -->
+    <g transform="translate(128,440)"><g class="bob" id="hero-exp"><g class="art" filter="url(#wob2)">
+      <path d="M-7 0 V14 M7 0 V14 M-12 15 H-4 M4 15 H12" stroke-width="4"/>
+      <path d="M-20 -30 Q-28 -28 -26 -8 Q-24 0 -14 -2Z" fill="#8a6a3c"/>
+      <path d="M-24 -32 l8 -6" stroke-width="5" stroke="#efdfae"/>
+      <path d="M-14 2 Q-17 -34 0 -37 Q17 -34 14 2Z" fill="#b9a26a"/>
+      <path d="M-12 -34 Q0 -26 12 -34 L14 -27 Q0 -19 -14 -27Z" fill="#c9584e"/>
+      <path d="M-13 -22 L-18 -6"/>
+      <circle cx="0" cy="-52" r="15.5" fill="#d9b48a"/>
+      <ellipse cx="0" cy="-63" rx="25" ry="6" fill="#7d8a5a"/>
+      <path d="M-14 -64 Q-13 -80 0 -80 Q13 -80 14 -64Z" fill="#7d8a5a"/>
+      <path d="M-14 -67 Q0 -62 14 -67" stroke-width="3" stroke="#3b2f24"/>
+      <circle class="blink" cx="-5" cy="-51" r="1.9" fill="#3b2f24"/><circle class="blink" cx="6" cy="-51" r="1.9" fill="#3b2f24"/>
+      <path d="M-4 -44 q5 4 9 0" stroke-width="1.6"/>
+      <ellipse cx="-10" cy="-46" rx="3" ry="2" fill="#d98a76" stroke="none" opacity=".7"/><ellipse cx="11" cy="-46" rx="3" ry="2" fill="#d98a76" stroke="none" opacity=".7"/>
+      <path d="M13 -24 L22 -24"/>
+      <g class="swing">
+        <circle cx="24" cy="-6" r="20" fill="url(#gold)" stroke="none" opacity=".8"/>
+        <path d="M22 -24 V-16"/><path d="M17 -16 H29 L27 2 H19Z" fill="#f8cf55"/><path d="M16 -16 H30 M18 2 H28" stroke-width="3"/>
+      </g>
+    </g></g></g>
+    <!-- Käfer-Roboter -->
+    <g transform="translate(196,452)"><g class="art" filter="url(#wob2)">
+      <path d="M-13 0 l-7 8 M-4 2 l-3 9 M6 2 l3 9 M14 0 l7 8" stroke-width="2"/>
+      <path d="M-17 0 Q-17 -20 0 -20 Q17 -20 17 0Z" fill="#c9a24a"/>
+      <path class="thin" d="M0 -20 V0 M-10 -14 q4 4 2 12"/>
+      <circle cx="9" cy="-9" r="5" fill="#f5eedb"/><circle class="blink" cx="10" cy="-9" r="2" fill="#3b2f24"/>
+      <path d="M-6 -19 L-10 -32"/><circle class="bulb" cx="-10" cy="-34" r="3.5" fill="#c9584e"/>
+    </g></g>
+    <!-- Vordergrund -->
+    <g class="art" filter="url(#wob)">
+      <path d="M-10 500 Q10 430 60 470 Q80 440 110 500Z M700 500 Q720 440 760 466 Q790 430 812 500Z" fill="#4c5f3c"/>
+      <path d="M640 476 q4 -18 8 0 q4 -22 9 0 M90 478 q4 -16 8 0 q5 -20 9 0" stroke="#55663a"/>
+    </g>
+    <rect width="800" height="500" filter="url(#blot)" opacity=".5" style="mix-blend-mode:multiply"/>
+    <rect width="800" height="500" filter="url(#paper)" style="mix-blend-mode:multiply"/>
+    <rect width="800" height="500" fill="url(#vig)"/>
+  </svg>
+  </div>
+  <div class="panel" id="p-exp"></div>
+</section>
+
+<script>
+// Zahnräder zeichnen
+function gear(r, n) {
+  const ri = r * 0.76; let d = '';
+  const p = (rad, a) => `${(rad * Math.cos(a)).toFixed(1)} ${(rad * Math.sin(a)).toFixed(1)}`;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * 2 * Math.PI, s = Math.PI / n;
+    d += `${i ? 'L' : 'M'}${p(ri, a - s * 0.55)} L${p(r, a - s * 0.3)} L${p(r, a + s * 0.3)} L${p(ri, a + s * 0.55)} `;
+  }
+  return d + 'Z';
+}
+document.querySelectorAll('.gearp').forEach((el) => el.setAttribute('d', gear(+el.dataset.r, +el.dataset.n)));
+
+const WORLDS = {
+  zoo: {
+    intro: 'Die alte Wasserpumpe steht still. Dreh sie mit drei richtigen Antworten wieder an!',
+    steps: ['Es gluckert in den Rohren …', 'Wer schaut denn da über die Mauer?', 'Das Tor ist offen. Die Giraffe hat wieder Wasser!'],
+    tasks: [{ q: '4 · 6', a: 24, c: [28, 24, 18] }, { q: '345 + 30', a: 375, c: [375, 348, 645] }, { q: '18 : 3', a: 6, c: [5, 9, 6] }],
+  },
+  exp: {
+    intro: 'Das Steintor klemmt. Jede richtige Antwort dreht die Zahnräder ein Stück weiter.',
+    steps: ['Es knirscht im Gemäuer …', 'Das Tor hebt sich. Noch ein Stück!', 'Geschafft! Dahinter liegt ein Stück der alten Karte.'],
+    tasks: [{ q: '7 · 8', a: 56, c: [54, 56, 63] }, { q: '1 000 − 250', a: 750, c: [850, 650, 750] }, { q: '4 200 + 800', a: 5000, c: [5000, 4280, 5200] }],
+  },
+};
+
+function setup(id) {
+  const w = WORLDS[id], svg = document.getElementById('s-' + id), panel = document.getElementById('p-' + id);
+  let step = 0;
+  const draw = (msg) => {
+    svg.style.setProperty('--s', step);
+    svg.classList.remove('step1', 'step2', 'step3');
+    if (step) svg.classList.add('step' + step);
+    if (step >= 3) {
+      panel.innerHTML = `<div class="who">${w.steps[2]}</div><div class="q">★ ★ ★</div><button class="again">Nochmal</button>`;
+      panel.querySelector('.again').onclick = () => { step = 0; draw(); };
+      return;
+    }
+    const t = w.tasks[step];
+    panel.innerHTML = `<div class="who">${msg || (step ? w.steps[step - 1] : w.intro)}</div><div class="q">${t.q} = ?</div><div class="answers">${t.c.map((c) => `<button class="ans" data-v="${c}">${c.toLocaleString('de-DE').replace('.', ' ')}</button>`).join('')}</div>`;
+    panel.querySelectorAll('.ans').forEach((b) => (b.onclick = () => {
+      if (+b.dataset.v === t.a) { step++; draw(); }
+      else { b.classList.remove('no'); void b.offsetWidth; b.classList.add('no'); panel.querySelector('.who').textContent = 'Fast! Schau nochmal genau hin.'; }
+    }));
+  };
+  draw();
+}
+setup('zoo'); setup('exp');
+
+document.querySelectorAll('.tab').forEach((b) => (b.onclick = () => {
+  document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('on', x === b));
+  document.querySelectorAll('.stage').forEach((s) => s.classList.toggle('on', s.id === 'st-' + b.dataset.t));
+}));
+</script>
+</body>
+</html>

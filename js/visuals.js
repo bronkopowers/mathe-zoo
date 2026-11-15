@@ -16,6 +16,7 @@ export function renderVisual(v) {
     case 'groups': return groups(v);
     case 'money': return money(v.ct);
     case 'terms': return terms();
+    case 'column': return column(v);
     default: return '';
   }
 }
@@ -56,7 +57,15 @@ function blocks({ h, z, e }) {
 
 function placeTable(n) {
   const d = String(n).padStart(3, '0').split('');
-  return `<table class="vis place"><tr><th>H</th><th>Z</th><th>E</th></tr><tr>${d.map((x) => `<td>${x}</td>`).join('')}</tr></table>`;
+  const heads = ['M', 'HT', 'ZT', 'T', 'H', 'Z', 'E'].slice(-d.length);
+  return `<table class="vis place"><tr>${heads.map((h) => `<th>${h}</th>`).join('')}</tr><tr>${d.map((x) => `<td>${x}</td>`).join('')}</tr></table>`;
+}
+
+// Schriftliches Rechnen: Zahlen stellengerecht untereinander
+function column({ a, b, op }) {
+  const w = Math.max(String(a).length, String(b).length) + 1;
+  const row = (n, pre = '') => `<tr>${(pre + String(n).padStart(w - pre.length, ' ')).split('').map((c) => `<td>${c === ' ' ? '' : c}</td>`).join('')}</tr>`;
+  return `<table class="vis column">${row(a)}${row(b, op)}<tr class="sum">${'<td></td>'.repeat(w - 1)}<td>?</td></tr></table>`;
 }
 
 function numberLine({ from, to, step, label, mark, arrow }) {

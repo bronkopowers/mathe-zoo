@@ -1,7 +1,7 @@
 // Lernmodell: Niveau-Anpassung pro Fähigkeit, Wiedervorlage (Leitner-Kästen),
-// Zusammenstellung einer Übungsrunde. Reine Funktionen, `now` wird übergeben.
+// Zusammenstellung einer Runde an einem Ort. Reine Funktionen, `now` wird übergeben.
 
-import { SKILLS } from './tasks.js';
+import { SKILLS } from './catalog.js';
 
 export const DAY = 24 * 60 * 60 * 1000;
 // Abstände in Tagen pro Kasten. Kasten 0 = noch nie geübt.
@@ -66,56 +66,56 @@ export function accuracy(s) {
   return s.recent.length ? count(s.recent) / s.recent.length : null;
 }
 
-export function skillWeight(id, s, focus, now) {
+export const isDue = (s, now) => s.box > 0 && s.due <= now;
+
+export function skillWeight(s, now) {
   let w = 1;
-  const isFocus = focus.includes(id);
-  if (isFocus) w += 6;
-  if (s.box > 0 && s.due <= now) w += 3;
+  if (isDue(s, now)) w += 3;
   const acc = accuracy(s);
   if (acc !== null && s.recent.length >= 3 && acc < 0.7) w += 2;
-  if (s.mastered && s.due > now) w = 0.2;
+  if (s.attempts === 0) w += 1;
+  if (s.mastered && s.due > now) w = 0.3;
   return w;
 }
 
-// Stellt eine gemischte Runde zusammen: höchstens `maxPer` Aufgaben pro Fähigkeit,
-// nie zweimal dieselbe Fähigkeit direkt hintereinander (Interleaving).
-export function planSession(state, now, r = Math.random, n = 12, maxPer = 4) {
-  const focus = state.focus || [];
-  const ids = SKILLS.map((s) => s.id);
-  const used = Object.fromEntries(ids.map((id) => [id, 0]));
-  const plan = [];
-  for (let i = 0; i < n; i++) {
-    const prev = plan[plan.length - 1];
-    const cands = ids.filter((id) => used[id] < maxPer && id !== prev);
+function drawWeighted(ids, k, skills, now, r, maxPer) {
+  const used = {};
+  const out = [];
+  for (let i = 0; i < k; i++) {
+    const prev = out[out.length - 1];
+    const free = ids.filter((id) => (used[id] || 0) < maxPer);
+    const cands = free.filter((id) => id !== prev).length ? free.filter((id) => id !== prev) : free;
     if (!cands.length) break;
-    const weights = cands.map((id) => skillWeight(id, state.skills[id], focus, now));
-    const total = weights.reduce((a, b) => a + b, 0);
-    let x = r() * total;
+    const weights = cands.map((id) => skillWeight(skills[id], now));
+    let x = r() * weights.reduce((a, b) => a + b, 0);
     let chosen = cands[cands.length - 1];
-    for (let k = 0; k < cands.length; k++) {
-      x -= weights[k];
-      if (x <= 0) { chosen = cands[k]; break; }
+    for (let j = 0; j < cands.length; j++) {
+      x -= weights[j];
+      if (x <= 0) { chosen = cands[j]; break; }
     }
-    used[chosen] += 1;
-    plan.push(chosen);
+    used[chosen] = (used[chosen] || 0) + 1;
+    out.push(chosen);
   }
+  return out;
+}
+
+// Eine Runde an einem Ort: Aufgaben aus den Themen des Ortes, gemischt (Interleaving),
+// dazu bis zu `nReview` fällige Wiederholungen aus anderen, schon geübten Themen.
+export function planRound(skills, placeIds, otherIds, now, r = Math.random, n = 10, nReview = 2) {
+  const dueOthers = otherIds.filter((id) => !placeIds.includes(id) && skills[id].attempts > 0 && isDue(skills[id], now));
+  const review = drawWeighted(dueOthers, Math.min(nReview, dueOthers.length), skills, now, r, 1);
+  const maxPer = Math.max(2, Math.ceil(n / Math.min(placeIds.length, 4)));
+  const plan = drawWeighted(placeIds, n - review.length, skills, now, r, maxPer);
+  review.forEach((id, i) => plan.splice(Math.min(plan.length, 3 + i * 4), 0, id));
   return plan;
 }
 
-// Einstufungstest: pro Fähigkeit erst eine Aufgabe auf Stufe 2, bei Erfolg Stufe 3.
-export const PLACEMENT_SKILLS = ['stellenwert', 'nachbarzahlen', 'ordnen', 'zahlenstrahl', 'plus_ohne', 'minus_ohne', 'plus_mit', 'minus_mit', 'einmaleins', 'teilen', 'geld_umrechnen', 'sachaufgaben'];
-
-export function placementLevel(res2, res3) {
-  if (!res2) return 1;
-  if (res3) return 3;
-  return 2;
-}
-
-// Münzen: Erfolg beim ersten Versuch zählt am meisten, schwerere und fällige Aufgaben bringen mehr.
-export function coinsFor({ firstTry, solved, level, wasDue }) {
-  if (!solved) return 0;
-  if (!firstTry) return 1;
-  return 2 + (level === 3 ? 1 : 0) + (wasDue ? 1 : 0);
+// Sterne eines Ortes: 1 = eine Runde geschafft, 2 = alle Themen mindestens Stufe 2, 3 = alle gemeistert
+export function placeStars(skills, placeIds, rounds) {
+  if (!rounds) return 0;
+  if (placeIds.every((id) => skills[id].mastered)) return 3;
+  if (placeIds.every((id) => skills[id].attempts > 0 && skills[id].level >= 2)) return 2;
+  return 1;
 }
 
 export const dayKey = (ts) => {

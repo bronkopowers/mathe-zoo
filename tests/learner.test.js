@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { newSkillState, recordAnswer, scheduleAfterSession, planSession, ensureSkills, coinsFor, placementLevel, DAY } from '../js/learner.js';
+import { newSkillState, recordAnswer, scheduleAfterSession, planRound, placeStars, ensureSkills, DAY } from '../js/learner.js';
+import { TOPICS, SKILLS } from '../js/catalog.js';
 
 test('4 von 5 richtig -> nächste Stufe', () => {
   const s = newSkillState();
@@ -55,27 +56,42 @@ test('Wiedervorlage: gut geübt -> später, schlecht -> morgen', () => {
   assert.equal(s.box, 1);
 });
 
-test('Runde: gemischt, keine Wiederholung direkt hintereinander, max 4 pro Thema, Fokus bevorzugt', () => {
-  const state = ensureSkills({ focus: ['plus_ohne', 'sachaufgaben'] });
-  let focusCount = 0, total = 0;
-  for (let k = 0; k < 200; k++) {
-    const plan = planSession(state, 0);
-    assert.equal(plan.length, 12);
-    for (let i = 1; i < plan.length; i++) assert.notEqual(plan[i], plan[i - 1]);
-    const counts = {};
-    plan.forEach((id) => (counts[id] = (counts[id] || 0) + 1));
-    assert.ok(Object.values(counts).every((c) => c <= 4));
-    focusCount += plan.filter((id) => state.focus.includes(id)).length;
-    total += plan.length;
+test('Themen-Orte: jede Fähigkeit existiert, jede Klasse hat drei Orte', () => {
+  for (const g of Object.keys(TOPICS)) {
+    assert.equal(TOPICS[g].length, 3);
+    for (const ids of TOPICS[g]) for (const id of ids) assert.ok(SKILLS.some((s) => s.id === id), `${id} fehlt`);
   }
-  assert.ok(focusCount / total > 0.4, `Fokus-Anteil ${focusCount / total}`);
 });
 
-test('Münzen und Einstufung', () => {
-  assert.equal(coinsFor({ firstTry: true, solved: true, level: 3, wasDue: true }), 4);
-  assert.equal(coinsFor({ firstTry: false, solved: true, level: 3, wasDue: true }), 1);
-  assert.equal(coinsFor({ firstTry: false, solved: false, level: 1, wasDue: false }), 0);
-  assert.equal(placementLevel(false, false), 1);
-  assert.equal(placementLevel(true, false), 2);
-  assert.equal(placementLevel(true, true), 3);
+test('Runde am Ort: 10 gemischte Aufgaben aus dem Ort, fällige Wiederholungen von anderen Orten', () => {
+  for (const g of [3, 4]) {
+    const st = ensureSkills({});
+    const [place, ...rest] = TOPICS[g];
+    const others = rest.flat();
+    for (let k = 0; k < 100; k++) {
+      const plan = planRound(st.skills, place, others, 0);
+      assert.equal(plan.length, 10);
+      assert.ok(plan.every((id) => place.includes(id)), 'ohne fällige Wiederholung nur Themen des Ortes');
+      for (let i = 1; i < plan.length; i++) assert.notEqual(plan[i], plan[i - 1]);
+      assert.ok(new Set(plan).size >= Math.min(4, place.length), 'mindestens vier Themen gemischt');
+    }
+    const o = others[0];
+    st.skills[o].attempts = 5;
+    st.skills[o].box = 1;
+    st.skills[o].due = 0;
+    const plan = planRound(st.skills, place, others, DAY);
+    assert.equal(plan.length, 10);
+    assert.equal(plan.filter((id) => id === o).length, 1, 'fällige Wiederholung ist dabei');
+  }
+});
+
+test('Sterne eines Ortes', () => {
+  const st = ensureSkills({});
+  const ids = TOPICS[3][0];
+  assert.equal(placeStars(st.skills, ids, 0), 0);
+  assert.equal(placeStars(st.skills, ids, 1), 1);
+  ids.forEach((id) => { st.skills[id].attempts = 6; st.skills[id].level = 2; });
+  assert.equal(placeStars(st.skills, ids, 2), 2);
+  ids.forEach((id) => { st.skills[id].mastered = true; });
+  assert.equal(placeStars(st.skills, ids, 5), 3);
 });
