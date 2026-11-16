@@ -32,3 +32,9 @@ export const TOPICS = {
     ['g4_sach', 'sachaufgaben', 'platzhalter', 'zahlenmauer'],
   ],
 };
+
+// Einstufung: je Ort zwei Themen, die stellvertretend für den Ort geprüft werden
+export const PLACEMENT = {
+  3: [['stellenwert', 'nachbarzahlen'], ['plus_ohne', 'minus_mit'], ['einmaleins', 'teilen'], ['geld_umrechnen', 'zeit'], ['platzhalter', 'sachaufgaben']],
+  4: [['g4_stellenwert', 'g4_runden'], ['g4_plus', 'g4_minus'], ['g4_mal', 'g4_teilen'], ['g4_groessen', 'zeit'], ['g4_sach', 'platzhalter']],
+};

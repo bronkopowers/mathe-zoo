@@ -1,7 +1,8 @@
 import { SCHEMAS, check, euro, pick, int } from './tasks.js';
 import { fmt } from './tasks4.js';
-import { generate, skillById, TOPICS, TOPIC_NAMES, GRADES } from './catalog.js';
-import { recordAnswer, scheduleAfterSession, planRound, placeStars, accuracy, isDue, dayKey, DAY } from './learner.js';
+import { generate, skillById, TOPICS, TOPIC_NAMES, GRADES, PLACEMENT } from './catalog.js';
+import { recordAnswer, scheduleAfterSession, planRound, placeStars, coinsFor, placementLevels, accuracy, isDue, dayKey, DAY } from './learner.js';
+import { SHOPS } from './shop.js';
 import { load, save, newProfile, exportFile, importFile } from './store.js';
 import { WORLDS } from './worlds.js';
 import { DEFS, GRAIN, sceneSvg, mapSvg, badge } from './scenes.js';
@@ -121,7 +122,7 @@ function renderNewProfile() {
     data.profiles.push(P);
     data.activeId = P.id;
     persist();
-    renderMap();
+    renderPlacementIntro();
   };
 }
 
@@ -145,13 +146,22 @@ function renderMap() {
   app.innerHTML = `<header class="bar">
       <button class="btn round" id="switch" aria-label="Kind wechseln">←</button>
       <h1>${esc(P.name)}</h1>
+      <span class="coins" id="coins" title="${SHOPS[P.world].coin}">${coinHTML(P.coins)}</span>
+      <button class="btn primary" id="shop">${SHOPS[P.world].button}</button>
       <button class="btn" id="tempo">Blitzrunde</button>
       <button class="btn" id="parents">Eltern</button>
     </header>
     ${frame(mapSvg(P.world, w.name, nodes))}
     <p class="tip">${tip}${today ? ` Heute schon ${today.tasks} Aufgaben gelöst.` : ''}</p>`;
+  // Gesammelte Stücke wohnen auf der Karte
+  const SLOTS = [[7, 56], [33, 93], [53, 21], [60, 93], [30, 58], [8, 36], [22, 18], [46, 84], [94, 56], [95, 14]];
+  const defs = [...SHOPS[P.world].items, ...SHOPS[P.world].rare];
+  const mine = P.items.map((o) => ({ ...o, def: defs.find((d) => d.id === o.id) })).filter((o) => o.def).slice(-SLOTS.length);
+  $('.frame-in').insertAdjacentHTML('beforeend', `<div class="critters">${mine.map((o, i) => `<button class="critter" style="left:${SLOTS[i][0]}%;top:${SLOTS[i][1]}%;animation-delay:${-i * 0.37}s" aria-label="${esc(o.name)}">${o.def.e}</button>`).join('')}</div>`);
+  $$('.critter').forEach((c) => (c.onclick = () => { c.classList.remove('happy'); void c.offsetWidth; c.classList.add('happy'); tone('tick'); }));
   $('#switch').onclick = renderProfiles;
   $('#tempo').onclick = renderTempoMenu;
+  $('#shop').onclick = renderShop;
   $('#parents').onclick = renderParentGate;
   $$('.node').forEach((el) => {
     const go = () => {
@@ -165,16 +175,71 @@ function renderMap() {
   });
 }
 
+// ---------- Einstufung ----------
+function renderPlacementIntro() {
+  setKeys(null);
+  app.innerHTML = `<div class="panel center">
+    ${badge(world().places[0].scene)}
+    <h2>Hallo ${esc(P.name)}!</h2>
+    <p>Bevor es losgeht, zeigst du mir, was du schon kannst. Dann bekommst du Aufgaben, die genau zu dir passen.</p>
+    <p>Das ist kein Test mit Noten. Wenn du etwas nicht weißt, ist das völlig in Ordnung. Dann üben wir es später zusammen.</p>
+    <div class="row-btns"><button class="btn primary big" id="go">Los geht's!</button></div>
+    <button class="link dark" id="skip">Überspringen und leicht anfangen</button></div>`;
+  $('#go').onclick = startPlacement;
+  $('#skip').onclick = () => { P.placed = true; persist(); renderMap(); };
+}
+
+function startPlacement() {
+  const reps = PLACEMENT[P.grade];
+  // erst je ein Thema pro Ort, dann das zweite: so wechseln die Themen ab
+  const queue = [...reps.map((p) => p[0]), ...reps.map((p) => p[1])].map((skill) => ({ skill, level: 2 }));
+  session = { placement: true, pl: {}, queue, base: queue.length, idx: -1, startedAt: Date.now(), results: {}, dueAtStart: {}, done: 0, correct: 0, coins: 0, events: [], step: 0, narr: 'Zeig, was du kannst. Wenn eine Aufgabe zu schwer ist, rate einfach.' };
+  app.innerHTML = `<header class="bar slim">
+      <button class="btn round" id="quit" aria-label="Beenden">✕</button>
+      <h1>Was kannst du schon?</h1><div class="progress" id="prog"></div><span class="coins" id="coins">${coinHTML(P.coins)}</span>
+    </header>
+    <main class="panel task narrow" id="panel"></main>`;
+  $('#quit').onclick = () => { if (confirm('Einstufung beenden? Was du bis hier gezeigt hast, zählt.')) finishPlacement(); };
+  nextTask();
+}
+
+function finishPlacement() {
+  const now = Date.now();
+  const s = session;
+  session = null;
+  setKeys(null);
+  const levels = placementLevels(s.pl, PLACEMENT[P.grade], TOPICS[P.grade]);
+  for (const [id, lv] of Object.entries(levels)) {
+    P.skills[id].level = lv;
+    P.skills[id].levelRecent = [];
+  }
+  P.placed = true;
+  const k = dayKey(now);
+  P.log[k] ||= { secs: 0, tasks: 0, correct: 0 };
+  P.log[k].secs += Math.round((now - s.startedAt) / 1000);
+  P.log[k].tasks += s.done;
+  P.log[k].correct += s.correct;
+  persist();
+  tone('win');
+  app.innerHTML = `<div class="panel center">
+    ${badge(world().places[0].scene)}
+    <h2>Danke, ${esc(P.name)}!</h2>
+    <p>Jetzt weiß ich, wo wir anfangen. Manche Aufgaben werden leicht sein, andere knifflig. Genau so soll es sein.</p>
+    <div class="stats"><div><b>+${s.coins}</b> <i class="coinic"></i><br><small>${SHOPS[P.world].coin}</small></div></div>
+    <div class="row-btns"><button class="btn primary big" id="map">Zur Karte</button></div></div>`;
+  $('#map').onclick = renderMap;
+}
+
 // ---------- Runde an einem Ort ----------
 function startRound(i) {
   const now = Date.now();
   const place = world().places[i];
   const others = TOPICS[P.grade].flat();
   const plan = planRound(P.skills, topicIds(i), others, now);
-  session = { i, place, queue: plan.map((skill) => ({ skill })), base: plan.length, idx: -1, startedAt: now, results: {}, dueAtStart: {}, done: 0, correct: 0, events: [], step: 0, starsBefore: stars(i) };
+  session = { i, place, queue: plan.map((skill) => ({ skill })), base: plan.length, idx: -1, startedAt: now, results: {}, dueAtStart: {}, done: 0, correct: 0, coins: 0, events: [], step: 0, starsBefore: stars(i) };
   app.innerHTML = `<header class="bar slim">
       <button class="btn round" id="quit" aria-label="Beenden">✕</button>
-      <h1>${place.name}</h1><div class="progress" id="prog"></div>
+      <h1>${place.name}</h1><div class="progress" id="prog"></div><span class="coins" id="coins">${coinHTML(P.coins)}</span>
     </header>
     <div class="play">${frame(sceneSvg(place.scene))}<main class="panel task" id="panel"></main></div>`;
   $('#quit').onclick = () => { if (confirm('Runde abbrechen?')) finishRound(true); };
@@ -182,21 +247,21 @@ function startRound(i) {
   nextTask();
 }
 
-function setStep(k) {
+function setStep(k, frac = k / 4) {
   const svg = $('#scene');
   if (!svg) return;
-  svg.style.setProperty('--p', k / 4);
+  svg.style.setProperty('--p', frac);
   for (let n = 1; n <= 4; n++) svg.classList.toggle(`p${n}`, k >= n);
 }
 
 function nextTask() {
   session.locked = false;
   session.idx += 1;
-  if (session.idx >= session.queue.length) return finishRound(false);
+  if (session.idx >= session.queue.length) return session.placement ? finishPlacement() : finishRound(false);
   const item = session.queue[session.idx];
   const s = P.skills[item.skill];
   if (!(item.skill in session.dueAtStart)) session.dueAtStart[item.skill] = isDue(s, session.startedAt);
-  session.task = generate(item.skill, s.level);
+  session.task = generate(item.skill, item.level ?? s.level);
   session.item = item;
   session.attempt = 1;
   session.mistakes = 0;
@@ -396,44 +461,61 @@ function submitAnswer(given, btn) {
     btn?.classList.add('right');
     const moved = finishTask(firstTry);
     tone(moved ? 'gear' : 'ok');
-    feedback(`<b>${pick(Math.random, firstTry ? PRAISE : PRAISE_RETRY)}</b>${t.sach ? `<br>${esc(t.sach.answerSentence)}` : ''}`, 'good');
+    feedback(`<b>${pick(Math.random, firstTry ? PRAISE : PRAISE_RETRY)}</b> <span class="plus">+${session.lastCoins}<i class="coinic"></i></span>${session.combo >= 3 ? ` <span class="combo">${session.combo}er-Serie!</span>` : ''}${t.sach ? `<br>${esc(t.sach.answerSentence)}` : ''}`, 'good');
+    cheer(true);
+    if (session.combo === 5 || session.combo === 10) { tone('win'); toast(`${session.combo} Aufgaben in Folge gleich richtig!`); }
     return showNext();
   }
   tone('bad');
+  cheer(false);
   btn?.classList.add('wrong');
-  if (session.attempt === 1) {
+  if (session.attempt === 1 && !session.placement) {
     session.attempt = 2;
     session.entry = '';
     const laid = t.input === 'coins' ? `Du hast ${euro(given)} gelegt. ` : '';
     if (special) renderInput(); else press('');
     return feedback(`<b>Fast!</b> ${laid}${esc(t.hint.text)}${t.hint.visual ? renderVisual(t.hint.visual) : ''}<br>Versuch es nochmal.`, 'hint');
   }
-  finishTask(false);
+  finishTask(false, false);
   const correct = t.input === 'money' || t.input === 'coins' ? euro(t.answer) : t.input === 'choice' ? t.answer : t.input === 'order' ? t.answer.map(fmt).join(t.desc ? ' > ' : ' < ') : fmt(t.answer);
   if (t.input === 'tapline') $$('.tick').forEach((x) => x.classList.toggle('sel', Number(x.dataset.v) === t.answer));
-  feedback(`Richtig ist: <b>${esc(correct)}</b><br>So geht's: ${esc(t.solution)}<br><small>${pick(Math.random, ENCOURAGE)}</small>`, 'show');
+  feedback(session.placement
+    ? `Das ist noch neu für dich. Kein Problem, das üben wir zusammen!<br><small>Richtig wäre: ${esc(correct)}</small>`
+    : `Richtig ist: <b>${esc(correct)}</b><br>So geht's: ${esc(t.solution)}<br><small>${pick(Math.random, ENCOURAGE)}</small>`, 'show');
   showNext();
 }
 
 // Verbucht die Aufgabe. Gibt true zurück, wenn sich die Szene einen Schritt weiterbewegt hat.
-function finishTask(firstTry) {
+function finishTask(firstTry, solved = true) {
   const t = session.task;
   const now = Date.now();
   session.locked = true;
   session.done += 1;
   if (firstTry) session.correct += 1;
   (session.results[t.skill] ||= []).push(firstTry);
+  session.lastCoins = coinsFor({ firstTry, solved, level: t.level, wasDue: session.dueAtStart[t.skill] });
+  session.coins += session.lastCoins;
+  addCoins(session.lastCoins);
+  session.combo = firstTry ? (session.combo || 0) + 1 : 0;
+  if (session.combo >= 3) { session.lastCoins += 1; session.coins += 1; addCoins(1); }
+  if (session.placement) {
+    (session.pl[t.skill] ||= {})[`r${t.level}`] = firstTry;
+    if (t.level === 2 && firstTry) session.queue.splice(session.idx + 1, 0, { skill: t.skill, level: 3 });
+    persist();
+    return false;
+  }
   const ev = recordAnswer(P.skills[t.skill], firstTry, now);
   if (ev === 'levelUp') session.events.push(`${skillById(t.skill).name}: jetzt Stufe ${'★'.repeat(P.skills[t.skill].level)}`);
   if (ev === 'mastered') session.events.push(`${skillById(t.skill).name} hast du gemeistert!`);
   // Nicht auf Anhieb gelöst: eine ähnliche Aufgabe kommt etwas später nochmal
   if (!firstTry && !session.item.retry) session.queue.splice(Math.min(session.idx + 4, session.queue.length), 0, { skill: t.skill, retry: true });
   persist();
-  const step = Math.min(3, Math.floor((4 * session.done) / session.base));
+  const frac = Math.min(0.92, session.done / session.base);
+  const step = Math.min(3, Math.floor(4 * frac + 0.001));
+  setStep(step, frac);
   if (step > session.step) {
     session.step = step;
     session.narr = session.place.steps[step - 1];
-    setStep(step);
     const n = $('.narr');
     if (n) { n.textContent = session.narr; n.classList.remove('flash'); void n.offsetWidth; n.classList.add('flash'); }
     return true;
@@ -467,6 +549,9 @@ function finishRound(aborted) {
   setStep(4);
   tone('win');
   const st = stars(s.i);
+  const bonus = 5 + (st > s.starsBefore ? 10 : 0);
+  addCoins(bonus);
+  persist();
   const firstTime = P.places[s.place.id].rounds === 1;
   const nextPlace = world().places[s.i + 1];
   const news = [];
@@ -477,13 +562,151 @@ function finishRound(aborted) {
   $('#panel').innerHTML = `<div class="summary">
     <p class="narr flash">${esc(s.place.done)}</p>
     <div class="bigstars">${[0, 1, 2].map((n) => `<span class="${n < st ? 'on' : ''}">★</span>`).join('')}</div>
-    <div class="stats"><div><b>${s.correct}</b> von ${s.done}<br><small>gleich richtig</small></div></div>
+    <div class="stats"><div><b>${s.correct}</b> von ${s.done}<br><small>gleich richtig</small></div><div><b>+${s.coins + bonus}</b> <i class="coinic"></i><br><small>${s.coins} fürs Rechnen, ${bonus} Bonus</small></div></div>
     ${news.length ? `<ul class="events">${news.map((e) => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}
     ${st < 3 ? `<p class="hintline">${st < 2 ? 'Den zweiten Stern gibt es, wenn alle Themen hier auf Stufe ★★ sind.' : 'Den dritten Stern gibt es, wenn du alle Themen hier gemeistert hast.'}</p>` : ''}
-    <div class="row-btns"><button class="btn primary big" id="map">Zur Karte</button><button class="btn big" id="again">Noch eine Runde</button></div></div>`;
+    <div class="chestbox"><button class="chest" id="chest" aria-label="Schatzkiste öffnen">${CHEST}</button><p id="chesttxt">Eine Schatzkiste! Tippe sie an.</p></div>
+    <div class="row-btns"><button class="btn primary big" id="map">Zur Karte</button><button class="btn big" id="toshop">${SHOPS[P.world].button}</button><button class="btn big" id="again">Noch eine Runde</button></div></div>`;
+  $('#chest').onclick = openChest;
+  $('#toshop').onclick = renderShop;
   $('#map').onclick = renderMap;
   $('#again').onclick = () => startRound(s.i);
   $('#quit').onclick = renderMap;
+}
+
+// ---------- Effekte: Jubel, fliegende Münzen, Schatzkiste ----------
+const CHEST = `<svg viewBox="0 0 120 100" class="chestsvg" aria-hidden="true"><g class="art" filter="url(#wob2)">
+  <circle class="shine" cx="60" cy="42" r="40" fill="url(#gold)" stroke="none"/>
+  <g class="lid"><path d="M14 46 Q14 14 60 14 Q106 14 106 46Z" fill="#a8703a"/><path d="M40 17 V46 M80 17 V46" stroke-width="5" stroke="#c9a24a"/></g>
+  <path d="M14 46 H106 V90 H14Z" fill="#8a6a3c"/><path d="M40 46 V90 M80 46 V90" stroke-width="5" stroke="#c9a24a"/><rect x="52" y="40" width="16" height="18" rx="3" fill="#c9a24a"/></g></svg>`;
+
+function cheer(ok) {
+  const hero = $('#scene .hero');
+  if (hero) { hero.classList.remove('cheer', 'sad'); void hero.getBoundingClientRect(); hero.classList.add(ok ? 'cheer' : 'sad'); }
+  if (!ok) return;
+  const to = $('#coins')?.getBoundingClientRect();
+  const from = ($('#feedback') || $('#panel'))?.getBoundingClientRect();
+  if (!to || !from || !document.body.animate) return;
+  const n = Math.min(6, session?.lastCoins || 2);
+  for (let i = 0; i < n; i++) {
+    const c = document.createElement('i');
+    c.className = 'coinic fly';
+    const x0 = from.left + from.width / 2 + (Math.random() * 90 - 45), y0 = from.top + 12;
+    c.style.left = `${x0}px`;
+    c.style.top = `${y0}px`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 2500); // Sicherheitsnetz, falls die Animation pausiert wird
+    const dx = to.left + 8 - x0, dy = to.top + 6 - y0;
+    c.animate([
+      { transform: 'translate(0, 0) scale(1.5)', opacity: 1 },
+      { transform: `translate(${dx * 0.45}px, ${dy * 0.45 - 70}px) scale(1.3)`, opacity: 1, offset: 0.5 },
+      { transform: `translate(${dx}px, ${dy}px) scale(.7)`, opacity: 0.7 },
+    ], { duration: 620 + i * 80, delay: i * 70, easing: 'ease-in', fill: 'backwards' }).onfinish = () => {
+      c.remove();
+      const el = $('#coins');
+      if (el) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    };
+  }
+}
+
+function openChest() {
+  const el = $('#chest');
+  if (!el || el.classList.contains('open')) return;
+  const shop = SHOPS[P.world];
+  const missing = shop.rare.filter((r) => !P.items.some((o) => o.id === r.id));
+  const first = !P.chests;
+  P.chests = (P.chests || 0) + 1;
+  let html;
+  // Die erste Kiste enthält immer ein seltenes Stück, danach etwa jede dritte
+  if (missing.length && (first || Math.random() < 0.3)) {
+    const r = pick(Math.random, missing);
+    P.items.push({ uid: `${r.id}-${Date.now().toString(36)}`, id: r.id, name: r.name });
+    html = `<span class="em">${r.e}</span><b>Ein seltenes Stück: ${r.name}!</b>`;
+    tone('win');
+  } else {
+    const c = int(Math.random, 6, 15);
+    addCoins(c);
+    html = `<b>+${c}</b> <i class="coinic"></i> ${shop.coin}`;
+    tone('tick');
+  }
+  persist();
+  el.classList.add('open');
+  const t = $('#chesttxt');
+  t.innerHTML = html;
+  t.classList.add('prize');
+}
+
+// ---------- Münzen und Sammlung ----------
+const coinHTML = (n) => `<i class="coinic"></i><b>${n}</b>`;
+
+function addCoins(n) {
+  P.coins += n;
+  P.coinsTotal += n;
+  const el = $('#coins');
+  if (el) el.innerHTML = coinHTML(P.coins);
+}
+
+function renderShop() {
+  setKeys(null);
+  const shop = SHOPS[P.world];
+  const owned = P.items.map((o) => ({ ...o, def: [...shop.items, ...shop.rare].find((x) => x.id === o.id) })).filter((o) => o.def);
+  const card = (i) => {
+    const n = P.items.filter((o) => o.id === i.id).length;
+    return `<button class="sticker buy" data-id="${i.id}" ${P.coins >= i.price ? '' : 'disabled'}><span class="em">${i.e}</span><small>${i.name}</small><span class="price">${coinHTML(i.price)}</span>${n ? `<span class="have">×${n}</span>` : ''}</button>`;
+  };
+  app.innerHTML = `<header class="bar"><button class="btn round" id="back" aria-label="Zurück">←</button><h1>${shop.title}</h1><span class="coins" id="coins" title="${shop.coin}">${coinHTML(P.coins)}</span></header>
+    <div class="panel album">
+      <h2>${shop.mine}</h2>
+      <div class="stickers">${owned.length ? owned.map((o) => `<button class="sticker own" data-uid="${o.uid}"><span class="em">${o.def.e}</span><small>${esc(o.name)}</small></button>`).join('') : `<p class="hintline">${shop.empty}</p>`}</div>
+      ${owned.length ? `<p class="hintline">${shop.tip}</p>` : ''}
+      <p class="narr">${shop.coin} verdienst du beim Rechnen: 2 für jede Aufgabe, die gleich stimmt, mehr für schwere Aufgaben und Wiederholungen. Für jede geschaffte Runde gibt es 5 dazu.</p>
+      <h3>Seltene Stücke aus der Schatzkiste</h3>
+      <div class="stickers">${shop.rare.map((r) => (P.items.some((o) => o.id === r.id) ? `<div class="sticker rare"><span class="em">${r.e}</span><small>${r.name}</small></div>` : '<div class="sticker rare unknown"><span class="em">?</span><small>noch geheim</small></div>')).join('')}</div>
+      ${shop.groups.map((g) => `<h3>${g.name}</h3><div class="stickers">${shop.items.filter((i) => i.g === g.id).map(card).join('')}</div>`).join('')}
+    </div>`;
+  $('#back').onclick = renderMap;
+  $$('.sticker.buy').forEach((b) => (b.onclick = () => {
+    const def = shop.items.find((x) => x.id === b.dataset.id);
+    if (!def || P.coins < def.price) return;
+    const n = P.items.filter((o) => o.id === def.id).length;
+    P.coins -= def.price;
+    P.items.push({ uid: `${def.id}-${Date.now().toString(36)}`, id: def.id, name: n ? `${def.name} ${n + 1}` : def.name });
+    persist();
+    tone('win');
+    renderShop();
+    toast(`${def.e} ${def.name} ${shop.moved}`);
+  }));
+  $$('.sticker.own').forEach((el) => {
+    let timer = null, long = false;
+    const start = () => { long = false; timer = setTimeout(() => { long = true; renameItem(el.dataset.uid); }, 650); };
+    const end = () => clearTimeout(timer);
+    el.addEventListener('pointerdown', start);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointerleave', end);
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
+    el.addEventListener('click', () => {
+      if (long) return;
+      el.classList.remove('happy');
+      void el.offsetWidth;
+      el.classList.add('happy');
+      const t = document.createElement('span');
+      t.className = 'treat';
+      t.textContent = pick(Math.random, shop.treats);
+      el.appendChild(t);
+      setTimeout(() => t.remove(), 900);
+      tone('tick');
+    });
+  });
+}
+
+function renameItem(uid) {
+  const o = P.items.find((x) => x.uid === uid);
+  if (!o) return;
+  const name = prompt('Wie soll es heißen?', o.name);
+  if (!name || !name.trim()) return;
+  o.name = name.trim().slice(0, 16);
+  persist();
+  renderShop();
 }
 
 // ---------- Blitzrunde (Kopfrechnen auf Zeit, nur gegen den eigenen Rekord) ----------
@@ -549,11 +772,13 @@ function endTempo() {
   const old = P.tempoBest[t.mode];
   const record = t.correct > old;
   if (record) P.tempoBest[t.mode] = t.correct;
+  const coins = Math.floor(t.correct / 3) + (record ? 3 : 0);
+  addCoins(coins);
   persist();
   if (record) tone('win');
   app.innerHTML = `<div class="panel center">
     <h2>${record ? 'Neuer Rekord!' : 'Zeit ist um!'}</h2>
-    <div class="stats"><div><b>${t.correct}</b><br><small>richtig</small></div><div><b>${old}</b><br><small>alter Rekord</small></div></div>
+    <div class="stats"><div><b>${t.correct}</b><br><small>richtig</small></div><div><b>${old}</b><br><small>alter Rekord</small></div><div><b>+${coins}</b> <i class="coinic"></i></div></div>
     ${!record && t.correct > 0 ? `<p>${t.correct >= old - 2 ? 'Ganz knapp dran!' : 'Mit jedem Üben wirst du schneller.'}</p>` : ''}
     <div class="row-btns"><button class="btn primary big" id="again">Nochmal</button><button class="btn big" id="home">Zur Karte</button></div></div>`;
   $('#again').onclick = () => startTempo(t.mode);
@@ -600,6 +825,7 @@ function renderParents(viewId) {
     const max = Math.max(10, ...days.map((d) => d.min));
     const weak = TOPICS[V.grade].flat().filter((id) => { const a = accuracy(V.skills[id]); return a !== null && V.skills[id].recent.length >= 5 && a < 0.7; }).map((id) => skillById(id).name);
     body = `
+      <p>${V.coinsTotal} Münzen insgesamt verdient, ${V.items.length} Stücke in der Sammlung.</p>
       ${weak.length ? `<p class="warn">Hier hakt es gerade (unter 70 % richtig): <b>${weak.join(', ')}</b></p>` : ''}
       <h3>Übungszeit der letzten 7 Tage</h3>
       <div class="chart">${days.map((d) => `<div class="bar-col"><div class="cbar" style="height:${(d.min / max) * 100}%"></div><small>${Math.round(d.min)}′</small><span>${d.label}</span></div>`).join('')}</div>
@@ -610,7 +836,8 @@ function renderParents(viewId) {
       <label class="set">Name <input id="pname" value="${esc(V.name)}" maxlength="16"></label>
       <label class="set">Klasse <select id="pgrade">${GRADES.map((g) => `<option ${V.grade === g ? 'selected' : ''}>${g}</option>`).join('')}</select></label>
       <label class="set">Welt <select id="pworld">${Object.entries(WORLDS).map(([id, x]) => `<option value="${id}" ${V.world === id ? 'selected' : ''}>${x.name}</option>`).join('')}</select></label>
-      <button class="btn danger" id="pdel">Dieses Profil löschen</button>`;
+      <div class="row-btns"><button class="btn" id="pplace">Einstufung ${V.placed ? 'wiederholen' : 'starten'}</button><button class="btn danger" id="pdel">Dieses Profil löschen</button></div>
+      <p class="hintline">Die Einstufung dauert etwa 5 Minuten und setzt die Stufen aller Themen neu. Der übrige Lernstand bleibt erhalten.</p>`;
   }
   app.innerHTML = `<header class="bar"><button class="btn round" id="back" aria-label="Zurück">←</button><h1>Elternbereich</h1></header>
     <div class="panel parents">
@@ -642,6 +869,7 @@ function renderParents(viewId) {
   $('#pname').onchange = (e) => { V.name = e.target.value.trim().slice(0, 16) || V.name; persist(); renderParents(viewId); };
   $('#pgrade').onchange = (e) => { V.grade = Number(e.target.value); persist(); renderParents(viewId); };
   $('#pworld').onchange = (e) => { V.world = e.target.value; persist(); renderParents(viewId); };
+  $('#pplace').onclick = () => { P = V; data.activeId = V.id; persist(); renderPlacementIntro(); };
   $('#pdel').onclick = () => {
     if (!confirm(`Das Profil „${V.name}“ wirklich löschen? Der Lernstand ist dann weg.`)) return;
     if (!confirm('Ganz sicher? Das lässt sich nur mit einer gesicherten Datei rückgängig machen.')) return;

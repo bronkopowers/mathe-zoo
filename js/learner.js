@@ -122,3 +122,26 @@ export const dayKey = (ts) => {
   const d = new Date(ts);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
+
+// Münzen: Erfolg beim ersten Versuch zählt am meisten, schwerere und fällige Aufgaben bringen mehr.
+export function coinsFor({ firstTry, solved, level, wasDue }) {
+  if (!solved) return 0;
+  if (!firstTry) return 1;
+  return 2 + (level === 3 ? 1 : 0) + (wasDue ? 1 : 0);
+}
+
+// Einstufung auswerten. results: { skillId: { r2: bool, r3: bool } } (Aufgabe auf Stufe 2, bei Erfolg auf Stufe 3).
+// Geprüfte Themen bekommen ihre eigene Stufe. Die übrigen Themen eines Ortes starten
+// auf dem Schnitt der beiden geprüften, aber höchstens auf Stufe 2.
+export function placementLevels(results, reps, topics) {
+  const out = {};
+  reps.forEach((pair, i) => {
+    const lv = pair.map((id) => { const r = results[id]; return !r || r.r2 === undefined ? null : !r.r2 ? 1 : r.r3 ? 3 : 2; });
+    const known = lv.filter((x) => x !== null);
+    if (!known.length) return;
+    const placeLv = Math.min(2, Math.floor(known.reduce((a, b) => a + b, 0) / known.length));
+    for (const id of topics[i]) out[id] = placeLv;
+    pair.forEach((id, k) => { if (lv[k] !== null) out[id] = lv[k]; });
+  });
+  return out;
+}

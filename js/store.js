@@ -16,6 +16,8 @@ export function newProfile(name, grade, world) {
     name, grade, world,
     createdAt: Date.now(),
     places: {}, // ortId -> { rounds }
+    coins: 0, coinsTotal: 0,
+    items: [], // Sammlung: { uid, id, name }
     log: {}, // Tag -> { secs, tasks, correct }
     tempoBest: { einmaleins: 0, plusminus: 0 },
   });
@@ -26,7 +28,7 @@ export function newProfile(name, grade, world) {
 
 function normalize(d) {
   const data = { ...freshData(), ...d, settings: { ...freshData().settings, ...(d.settings || {}) } };
-  data.profiles = (data.profiles || []).map((p) => ensureSkills({ places: {}, log: {}, tempoBest: { einmaleins: 0, plusminus: 0 }, ...p }));
+  data.profiles = (data.profiles || []).map((p) => ensureSkills({ places: {}, log: {}, tempoBest: { einmaleins: 0, plusminus: 0 }, coins: 0, coinsTotal: 0, items: [], ...p }));
   if (!data.profiles.some((p) => p.id === data.activeId)) data.activeId = null;
   return data;
 }

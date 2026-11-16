@@ -455,7 +455,7 @@ const ICONS = {
   lock: '<rect x="-12" y="-4" width="24" height="20" rx="4" fill="#8d7f63"/><path d="M-7 -4 V-11 Q0 -20 7 -11 V-4" stroke-width="3"/>',
   soon: '<path d="M-7 -10 Q0 -22 8 -12 Q10 -4 0 2 V8" stroke-width="3.5"/><circle cx="0" cy="17" r="2.4" fill="#3b2f24"/>',
 };
-const POS = [[150, 335], [335, 205], [520, 318], [650, 170], [672, 372]];
+const POS = [[150, 335], [335, 205], [520, 318], [650, 150], [672, 372]];
 
 export const badge = (sceneId) => `<svg class="badge" viewBox="-56 -56 112 112" aria-hidden="true"><g ${A}><circle r="48" fill="#e9dcb6"/>${ICONS[sceneId]}</g></svg>`;
 
@@ -466,11 +466,11 @@ export function mapSvg(world, title, nodes) {
   const deco = zoo
     ? `<g ${AW}><path d="M28 34 H772 V466 H28Z" stroke-dasharray="14 10" stroke-width="1.6" opacity=".5"/>
         <g transform="translate(-515,-322)"><path d="M560 420 Q600 392 650 408 Q690 420 668 446 Q620 466 572 450 Q548 438 560 420Z" fill="#9cc0c4"/><path class="thin" d="M590 426 q8 -5 16 0 M620 438 q8 -5 16 0"/></g>
-        ${[[205, 96], [245, 126], [290, 462], [330, 478], [460, 130], [505, 100], [590, 100], [40, 262], [440, 476], [770, 262]].map(([x, y]) => `<path d="M${x} ${y} q-16 -4 -14 -20 q-4 -18 14 -20 q18 2 14 20 q2 16 -14 20Z M${x} ${y} v12" fill="#7f956a" fill-opacity=".85"/>`).join('')}
+        ${[[205, 96], [245, 126], [290, 462], [330, 478], [460, 130], [505, 100], [750, 96], [40, 262], [440, 476], [770, 262]].map(([x, y]) => `<path d="M${x} ${y} q-16 -4 -14 -20 q-4 -18 14 -20 q18 2 14 20 q2 16 -14 20Z M${x} ${y} v12" fill="#7f956a" fill-opacity=".85"/>`).join('')}
         <path class="thin" d="M560 230 q4 -14 8 0 q4 -16 8 0 M400 300 q4 -14 8 0 q4 -16 8 0 M610 470 q4 -14 8 0 q4 -16 8 0"/></g>`
     : `<g ${AW}><path d="M-10 420 Q80 380 120 430 Q150 470 110 510 H-10Z" fill="#9cc0c4"/><path class="thin" d="M20 440 q8 -6 16 0 t16 0 M40 470 q8 -6 16 0 t16 0"/>
-        <path d="M590 92 l40 -64 l34 50 l22 -30 l40 64Z" fill="#a9a58a"/><path class="thin" d="M630 28 l-8 22 l12 -6 M686 48 l-6 18"/>
-        ${[[40, 250], [300, 476], [230, 110], [460, 140], [640, 478], [775, 250]].map(([x, y]) => `<path d="M${x} ${y} v-34 M${x} ${y - 34} q-18 -10 -26 4 M${x} ${y - 34} q18 -10 26 4 M${x} ${y - 34} q-6 -18 -22 -14 M${x} ${y - 34} q6 -18 22 -14" stroke="#4c5f3c" stroke-width="2.4"/>`).join('')}
+        <path d="M250 462 l40 -64 l34 50 l22 -30 l40 64Z" fill="#a9a58a"/><path class="thin" d="M290 398 l-8 22 l12 -6 M346 418 l-6 18"/>
+        ${[[40, 250], [560, 478], [230, 110], [460, 140], [775, 250]].map(([x, y]) => `<path d="M${x} ${y} v-34 M${x} ${y - 34} q-18 -10 -26 4 M${x} ${y - 34} q18 -10 26 4 M${x} ${y - 34} q-6 -18 -22 -14 M${x} ${y - 34} q6 -18 22 -14" stroke="#4c5f3c" stroke-width="2.4"/>`).join('')}
         <g transform="translate(92,84)"><circle r="34" fill="none" stroke-width="1.6"/><path d="M0 -42 L7 0 L0 42 L-7 0Z" fill="#c9584e" fill-opacity=".8"/><path d="M-42 0 L0 -7 L42 0 L0 7Z" fill="#efdfae"/></g>
         </g>`;
   const nodeSvg = nodes.map((n, i) => {

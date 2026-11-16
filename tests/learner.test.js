@@ -95,3 +95,27 @@ test('Sterne eines Ortes', () => {
   ids.forEach((id) => { st.skills[id].mastered = true; });
   assert.equal(placeStars(st.skills, ids, 5), 3);
 });
+
+test('Münzen: gleich richtig bringt am meisten, nicht gelöst nichts', async () => {
+  const { coinsFor } = await import('../js/learner.js');
+  assert.equal(coinsFor({ firstTry: true, solved: true, level: 3, wasDue: true }), 4);
+  assert.equal(coinsFor({ firstTry: true, solved: true, level: 1, wasDue: false }), 2);
+  assert.equal(coinsFor({ firstTry: false, solved: true, level: 3, wasDue: true }), 1);
+  assert.equal(coinsFor({ firstTry: false, solved: false, level: 1, wasDue: false }), 0);
+});
+
+test('Einstufung: geprüfte Themen bekommen ihre Stufe, der Rest des Ortes höchstens Stufe 2', async () => {
+  const { placementLevels } = await import('../js/learner.js');
+  const { PLACEMENT } = await import('../js/catalog.js');
+  for (const g of [3, 4]) {
+    PLACEMENT[g].forEach((pair, i) => pair.forEach((id) => assert.ok(TOPICS[g][i].includes(id), `${id} gehört zu Ort ${i + 1}`)));
+    const [a, b] = PLACEMENT[g][0];
+    const [c, d] = PLACEMENT[g][1];
+    const lv = placementLevels({ [a]: { r2: true, r3: true }, [b]: { r2: true, r3: false }, [c]: { r2: false }, [d]: { r2: false } }, PLACEMENT[g], TOPICS[g]);
+    assert.equal(lv[a], 3);
+    assert.equal(lv[b], 2);
+    for (const id of TOPICS[g][0]) if (id !== a && id !== b) assert.equal(lv[id], 2, 'nicht geprüft: höchstens 2');
+    for (const id of TOPICS[g][1]) assert.equal(lv[id], 1, 'beides falsch: Stufe 1');
+    for (const id of TOPICS[g][2]) assert.equal(lv[id], undefined, 'nicht geprüfter Ort bleibt unverändert');
+  }
+});
