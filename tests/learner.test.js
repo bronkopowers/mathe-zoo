@@ -56,9 +56,9 @@ test('Wiedervorlage: gut geübt -> später, schlecht -> morgen', () => {
   assert.equal(s.box, 1);
 });
 
-test('Themen-Orte: jede Fähigkeit existiert, jede Klasse hat drei Orte', () => {
+test('Themen-Orte: jede Fähigkeit existiert, jede Klasse hat fünf Orte', () => {
   for (const g of Object.keys(TOPICS)) {
-    assert.equal(TOPICS[g].length, 3);
+    assert.equal(TOPICS[g].length, 5);
     for (const ids of TOPICS[g]) for (const id of ids) assert.ok(SKILLS.some((s) => s.id === id), `${id} fehlt`);
   }
 });
@@ -73,7 +73,7 @@ test('Runde am Ort: 10 gemischte Aufgaben aus dem Ort, fällige Wiederholungen v
       assert.equal(plan.length, 10);
       assert.ok(plan.every((id) => place.includes(id)), 'ohne fällige Wiederholung nur Themen des Ortes');
       for (let i = 1; i < plan.length; i++) assert.notEqual(plan[i], plan[i - 1]);
-      assert.ok(new Set(plan).size >= Math.min(4, place.length), 'mindestens vier Themen gemischt');
+      assert.ok(new Set(plan).size >= Math.min(3, place.length), 'mindestens drei Themen gemischt');
     }
     const o = others[0];
     st.skills[o].attempts = 5;

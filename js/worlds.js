@@ -24,6 +24,18 @@ export const WORLDS = {
         steps: ['Der Wagen ruckelt los.', 'Halbe Strecke! Der Elefant hat ihn schon entdeckt.', 'Fast da. Der Rüssel zuckt schon.'],
         done: 'Das Futter ist da. Der Elefant trompetet vor Freude!',
       },
+      {
+        id: 'kiosk', scene: 'zooKiosk', name: 'Der alte Kiosk',
+        intro: 'Der Kiosk ist seit Jahren verrammelt. Zieh den Rollladen Stück für Stück hoch!',
+        steps: ['Der Rollladen bewegt sich. Die Markise fährt aus.', 'Halb offen! Drinnen raschelt etwas.', 'Noch ein Ruck, dann ist der Kiosk auf.'],
+        done: 'Der Kiosk hat wieder geöffnet. Der Waschbär verkauft das erste Eis!',
+      },
+      {
+        id: 'voliere', scene: 'zooVoliere', name: 'Die große Voliere',
+        intro: 'Die Voliere ist völlig zugewachsen. Schneide die Ranken ab, damit die Vögel zurückkommen.',
+        steps: ['Die erste Ranke fällt. Man sieht wieder Gitter.', 'Die halbe Voliere ist frei.', 'Nur noch eine Ranke hängt am Gitter.'],
+        done: 'Die Voliere ist frei. Die Papageien sind zurück!',
+      },
     ],
   },
   exp: {
@@ -47,6 +59,18 @@ export const WORLDS = {
         intro: 'Die goldene Figur ist zu schwer. Bring die Waage mit Steinen ins Gleichgewicht.',
         steps: ['Der erste Stein liegt. Die Waage zittert.', 'Der Balken hebt sich langsam.', 'Fast im Gleichgewicht!'],
         done: 'Die Waage steht still und die Wand gibt den Kompass frei!',
+      },
+      {
+        id: 'boot', scene: 'expBoot', name: 'Der Flusshafen',
+        intro: 'Das Boot muss beladen werden, bevor es ablegen kann. Jede gelöste Aufgabe hebt eine Kiste an Bord.',
+        steps: ['Die erste Kiste steht an Deck.', 'Das halbe Boot ist beladen.', 'Noch eine Kiste, dann kann es losgehen.'],
+        done: 'Leinen los! Das Boot bringt dich zum Tempelsteg.',
+      },
+      {
+        id: 'spiegel', scene: 'expSpiegel', name: 'Die Halle der Spiegel',
+        intro: 'Durch das Fenster fällt ein Lichtstrahl. Dreh die Spiegel, bis er den Kristall trifft.',
+        steps: ['Der erste Spiegel fängt das Licht.', 'Der Strahl springt zur Decke.', 'Nur noch ein Spiegel fehlt bis zum Kristall.'],
+        done: 'Der Kristall leuchtet und zeigt das letzte Stück der Karte!',
       },
     ],
   },

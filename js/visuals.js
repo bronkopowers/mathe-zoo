@@ -68,7 +68,7 @@ function column({ a, b, op }) {
   return `<table class="vis column">${row(a)}${row(b, op)}<tr class="sum">${'<td></td>'.repeat(w - 1)}<td>?</td></tr></table>`;
 }
 
-function numberLine({ from, to, step, label, mark, arrow }) {
+function numberLine({ from, to, step, label, mark, arrow, tap }) {
   const W = 680, pad = 30, y = 70;
   const ticks = Math.round((to - from) / step);
   const px = (v) => pad + ((v - from) / (to - from)) * (W - 2 * pad);
@@ -78,6 +78,13 @@ function numberLine({ from, to, step, label, mark, arrow }) {
     const big = v % label === 0;
     g += `<line x1="${px(v)}" y1="${y - (big ? 14 : 7)}" x2="${px(v)}" y2="${y + (big ? 14 : 7)}" class="ln${big ? '' : ' thin'}"/>`;
     if (big && v !== arrow) g += `<text x="${px(v)}" y="${y + 38}" class="lbl small">${v}</text>`;
+  }
+  if (tap) {
+    const w = (W - 2 * pad) / ticks;
+    for (let i = 0; i <= ticks; i++) {
+      const v = from + i * step;
+      g += `<g class="tick" data-v="${v}"><rect x="${px(v) - w / 2}" y="${y - 50}" width="${w}" height="100" fill="transparent"/><circle class="tickdot" cx="${px(v)}" cy="${y}" r="13"/></g>`;
+    }
   }
   if (mark !== undefined) g += `<circle cx="${px(mark)}" cy="${y}" r="9" class="mark"/><text x="${px(mark)}" y="${y - 22}" class="lbl small">${mark}</text>`;
   if (arrow !== undefined) g += `<path d="M${px(arrow)},${y - 12} l-11,-24 h22 z" class="arrow"/>`;

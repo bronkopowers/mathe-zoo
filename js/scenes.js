@@ -309,7 +309,133 @@ function expWaage() {
   ${explorer(150, 426)}${beetle(214, 440)}</svg>`;
 }
 
-const SCENES = { zooTor, zooBecken, zooBahn, expTor, expBruecke, expWaage };
+
+// ---------- Zoo 4: Der alte Kiosk ----------
+function zooKiosk() {
+  let stripes = '';
+  for (let i = 0; i < 8; i += 2) stripes += `<path d="M${270 + 32.5 * i} 0 H${270 + 32.5 * (i + 1)} L${244 + 39 * (i + 1)} 46 H${244 + 39 * i}Z" fill="#c9584e"/>`;
+  return `${open('zooKiosk', '#e6dcc0')}
+  ${wash([[400, 70, 520, 150, '#a9c4bd'], [640, 100, 130, 70, '#f3e6b6'], [90, 290, 190, 100, '#8fa06a'], [720, 280, 190, 110, '#7f956a'], [400, 470, 520, 90, '#b59a6a']])}
+  ${zooTrees()}${lampChain()}
+  <defs><clipPath id="kwin"><rect x="304" y="246" width="192" height="88"/></clipPath></defs>
+  <g class="balloons"><g ${A}><path d="M352 172 Q380 200 400 222 M400 148 V222 M450 172 Q420 200 400 222" stroke-width="1.4"/>
+    <ellipse cx="350" cy="150" rx="19" ry="23" fill="#c9584e"/><ellipse cx="400" cy="124" rx="19" ry="23" fill="#e2b84a"/><ellipse cx="452" cy="150" rx="19" ry="23" fill="#4f8f8a"/></g></g>
+  <g ${AW}>
+    <path d="M-10 400 H810" stroke-width="2"/>
+    <path d="M260 400 V224 H540 V400Z" fill="#c9b07a"/>
+    <path class="thin" d="M290 340 V400 M330 346 V400 M370 346 V400 M410 346 V400 M450 346 V400 M490 346 V400 M520 232 V400 M280 232 V340"/>
+    <path d="M244 226 L270 188 H530 L556 226Z" fill="#a65a2e"/>
+    <rect x="336" y="150" width="128" height="38" rx="7" fill="#efe3b4"/>
+    <rect x="304" y="246" width="192" height="88" fill="#3d3530"/>
+    <path d="M574 400 V352 Q596 340 618 352 V400Z" fill="#8a6a3c"/><path class="thin" d="M574 368 H618 M574 386 H618"/>
+    <path class="thin" d="M120 440 q60 -10 130 0 M480 452 q70 -10 140 0"/>
+    <path d="M60 420 q4 -18 8 0 q4 -22 9 0 M700 430 q4 -16 8 0 q5 -20 9 0" stroke="#55663a"/>
+  </g>
+  <text x="400" y="178" font-size="26" text-anchor="middle" fill="#3b2f24" filter="url(#wob2)">KIOSK</text>
+  <g clip-path="url(#kwin)">
+    <g class="raccoon"><g ${A}>
+      <path d="M376 278 l-5 -17 l15 8Z M424 278 l5 -17 l-15 8Z" fill="#6b6661"/>
+      <path d="M371 302 Q371 268 400 268 Q429 268 429 302 Q429 330 400 332 Q371 330 371 302Z" fill="#a6a29a"/>
+      <path d="M375 297 Q388 284 400 295 Q412 284 425 297 Q412 310 400 301 Q388 310 375 297Z" fill="#3d3530"/>
+      <circle cx="389" cy="297" r="3.2" fill="#f5eedb" stroke="none"/><circle cx="411" cy="297" r="3.2" fill="#f5eedb" stroke="none"/>
+      <circle cx="389" cy="297" r="1.4" fill="#3b2f24" stroke="none"/><circle cx="411" cy="297" r="1.4" fill="#3b2f24" stroke="none"/>
+      <circle cx="400" cy="312" r="3" fill="#3b2f24"/><path d="M394 320 q6 5 12 0" stroke-width="1.6"/>
+      <path d="M452 334 L462 302 H442Z" fill="#d9a05a"/><circle cx="452" cy="296" r="11" fill="#e8a8b0"/>
+    </g></g>
+    <g class="shutter"><g ${A}><rect x="302" y="244" width="196" height="92" fill="#8a6a3c"/><path class="thin" d="M302 262 H498 M302 280 H498 M302 298 H498 M302 316 H498"/><circle cx="400" cy="326" r="4" fill="#3b2f24"/></g></g>
+  </g>
+  <g ${AW}><rect x="290" y="334" width="220" height="13" rx="3" fill="#96684f"/></g>
+  <g transform="translate(0,226)"><g class="awning"><g ${A}><path d="M270 0 H530 L556 46 H244Z" fill="#efe3b4"/>${stripes}<path d="M244 46 q19.5 12 39 0 t39 0 t39 0 t39 0 t39 0 t39 0 t39 0 t39 0" fill="#efe3b4"/></g></g></g>
+  ${keeper(170, 440)}${duck(650, 452)}</svg>`;
+}
+
+// ---------- Zoo 5: Die große Voliere ----------
+function zooVoliere() {
+  let bars = '';
+  for (let x = 250; x <= 550; x += 50) {
+    const top = 250 - 150 * Math.sqrt(1 - ((x - 400) / 180) ** 2);
+    bars += `M${x} 400 V${top.toFixed(0)} `;
+  }
+  const bird = (x, y, col, cls) => `<g transform="translate(${x},${y})"><g class="bird ${cls}"><g ${A}>
+    <path d="M-4 10 Q-10 30 -2 40 Q2 28 4 12Z" fill="${col}"/><ellipse rx="10" ry="15" fill="${col}"/><path class="thin" d="M-6 -2 q6 10 2 18"/>
+    <circle cx="3" cy="-17" r="8" fill="${col}"/><path d="M9 -19 q9 2 5 9 q-5 0 -6 -5Z" fill="#e0943a" stroke-width="1.4"/>
+    <circle cx="4" cy="-19" r="1.6" fill="#3b2f24" stroke="none"/></g></g></g>`;
+  const vine = (x, y, n) => `<g class="vine v${n}"><g ${A}><path d="M${x} ${y} q-40 -30 -10 -60 q10 -40 60 -30 q50 -10 50 40 q30 30 -10 55 q-50 30 -90 -5Z" fill="#5f7350"/>
+    <path d="M${x + 10} ${y - 30} q14 -8 20 4 q-10 10 -20 -4Z M${x + 50} ${y - 50} q14 -8 20 4 q-10 10 -20 -4Z M${x + 40} ${y - 6} q14 -8 20 4 q-10 10 -20 -4Z" fill="#8fa06a" stroke-width="1.4"/></g></g>`;
+  return `${open('zooVoliere', '#e6dcc0')}
+  ${wash([[400, 70, 520, 150, '#a9c4bd'], [400, 250, 150, 130, '#efe3b4'], [90, 290, 190, 100, '#8fa06a'], [720, 280, 190, 110, '#7f956a'], [400, 470, 520, 90, '#b59a6a']])}
+  ${zooTrees()}${lampChain()}
+  <g ${AW}>
+    <path d="M-10 400 H810" stroke-width="2"/>
+    <path d="M394 400 Q396 300 400 226 M400 306 Q442 286 474 256 M400 276 Q362 256 334 232 M400 232 Q412 204 432 190" stroke-width="7" stroke="#7a5a3a"/>
+    <path d="M220 400 V250 Q220 104 400 100 Q580 104 580 250 V400" stroke-width="4" stroke="#3a3430"/>
+    <path d="${bars}" stroke-width="2" stroke="#3a3430"/>
+    <path d="M220 250 Q400 282 580 250 M221 330 Q400 362 579 330" stroke-width="2" stroke="#3a3430"/>
+    <circle cx="400" cy="92" r="8" fill="#c9a24a"/>
+    <path d="M210 400 H590 V412 H210Z" fill="#96684f"/>
+    <path class="thin" d="M120 446 q60 -10 130 0 M520 452 q70 -10 140 0"/>
+    <path d="M60 424 q4 -18 8 0 q4 -22 9 0 M720 430 q4 -16 8 0 q5 -20 9 0" stroke="#55663a"/>
+  </g>
+  ${bird(474, 238, '#c9584e', 'b1')}${bird(336, 214, '#4f9a94', 'b2')}${bird(434, 172, '#e2b84a', 'b3')}
+  <g class="vdoor"><g ${A} stroke="#3a3430"><path d="M372 400 V336 Q400 318 428 336 V400Z" fill="#3a3430" fill-opacity=".15" stroke-width="3"/><path d="M386 330 V400 M400 324 V400 M414 330 V400" stroke-width="1.8"/></g></g>
+  ${vine(250, 240, 1)}${vine(460, 250, 2)}${vine(300, 370, 3)}${vine(430, 360, 4)}
+  ${heart(520, 150)}
+  ${keeper(140, 440)}${duck(670, 452)}</svg>`;
+}
+
+// ---------- Expedition 4: Der Flusshafen ----------
+function expBoot() {
+  const crate = (x, y, n) => `<g class="st st${n}"><rect x="${x}" y="${y}" width="30" height="28" fill="#c9a24a"/><path class="thin" d="M${x} ${y} l30 28 M${x + 30} ${y} l-30 28"/></g>`;
+  return `${open('expBoot', '#e2d6b4')}
+  ${wash([[130, 130, 240, 160, '#7f9166'], [680, 110, 250, 160, '#6f8a72'], [400, 50, 190, 80, '#f3e6b6'], [400, 470, 520, 80, '#9cc0c4']])}
+  ${jungle()}
+  <g ${AW}>
+    <path d="M640 400 V346 H700 V314 H810 V400Z" fill="#bcad8c"/><path class="thin" d="M640 372 H810 M700 346 H810 M670 346 V400 M740 314 V400"/>
+    <path d="M716 314 V250 H736 V314Z M774 314 V250 H794 V314Z" fill="#8f8165"/><path d="M708 250 H802 L792 234 H718Z" fill="#7d7058"/>
+    <path d="M-10 400 H810 V510 H-10Z" fill="#8fb5b8"/>
+    <path class="thin" d="M60 440 q10 -7 20 0 t20 0 M480 456 q10 -7 20 0 t20 0 M300 478 q10 -7 20 0 t20 0 M640 444 q10 -7 20 0 t20 0" stroke="#eef6f4"/>
+    <path d="M-10 362 H176 V378 H-10Z" fill="#a8703a"/><path d="M30 378 V420 M90 378 V424 M150 378 V420" stroke-width="6" stroke="#6b4a35"/>
+    <path d="M22 362 V276 Q40 262 58 276 V362Z" fill="#8f8165"/>
+    <path d="M124 362 V248" stroke-width="7" stroke="#6b4a35"/>
+  </g>
+  ${stoneLamps([[40, 340], [40, 318], [40, 296]])}
+  <g transform="translate(124,250)"><g class="crane"><g ${A}><path d="M-14 6 L96 -24" stroke-width="6" stroke="#6b4a35"/><path d="M96 -24 V26" stroke-width="1.6"/><path d="M90 26 q6 12 12 0" stroke-width="2.4"/></g></g></g>
+  ${mapPiece(755, 270)}
+  <g class="boat"><g class="float">
+    <g ${A}><path d="M320 394 V246" stroke-width="5" stroke="#6b4a35"/><path d="M320 246 l22 8 l-22 8Z" fill="#c9584e"/></g>
+    <g class="sail"><g ${A}><path d="M326 262 Q408 300 328 384Z" fill="#efe3b4"/><path class="thin" d="M330 300 q30 6 44 0 M330 340 q22 6 30 0"/></g></g>
+    <g ${A}>${crate(352, 366, 1)}${crate(386, 366, 2)}${crate(369, 338, 3)}${crate(403, 338, 4)}</g>
+    ${explorer(246, 380)}${beetle(292, 392)}
+    <g ${A}><path d="M186 392 Q198 430 240 432 H404 Q444 430 456 392Z" fill="#8a6a3c"/><path class="thin" d="M200 408 H444 M214 420 H430"/></g>
+  </g></g>
+  <g ${AW}><path d="M-10 500 Q10 440 50 470 Q70 446 96 500Z M720 500 Q740 446 770 468 Q794 440 812 500Z" fill="#4c5f3c"/></g></svg>`;
+}
+
+// ---------- Expedition 5: Die Halle der Spiegel ----------
+function expSpiegel() {
+  const seg = (a, b, n) => `<g class="seg s${n}"><path d="M${a[0]} ${a[1]} L${b[0]} ${b[1]}" stroke="#f2c14a" stroke-width="14" stroke-linecap="round" opacity=".35"/><path d="M${a[0]} ${a[1]} L${b[0]} ${b[1]}" stroke="#fff3c0" stroke-width="3.5" stroke-linecap="round"/></g>`;
+  const mirror = (x, y, n, rot) => `<g transform="translate(${x},${y}) rotate(${rot})"><g class="mirror m${n}"><g ${A}><ellipse rx="26" ry="8" fill="#cfe0e4"/><path class="thin" d="M-12 -2 h10"/></g></g></g>`;
+  const P1 = [95, 95], P2 = [300, 330], P3 = [480, 150], P4 = [620, 330], P5 = [720, 196];
+  return `${open('expSpiegel', '#c9bb98')}
+  ${wash([[0, 500, 300, 200, '#5a4e42'], [800, 0, 300, 220, '#5a4e42'], [800, 500, 240, 160, '#5a4e42'], [400, 240, 300, 180, '#e2d2a0'], [90, 90, 120, 100, '#f6e9b8']])}
+  <g ${AW}>
+    <path class="thin" d="M-10 90 H810 M-10 170 H810 M-10 250 H810 M-10 330 H810 M210 10 V90 M380 10 V90 M560 10 V90 M700 10 V90 M150 90 V170 M330 90 V170 M580 90 V170 M240 170 V250 M400 170 V250 M560 170 V250 M160 250 V330 M360 250 V330 M540 250 V330 M90 330 V400 M250 330 V400 M440 330 V400 M560 330 V400"/>
+    <path d="M-10 400 H810 V510 H-10Z" fill="#a69777"/><path class="thin" d="M100 400 L40 510 M300 400 L270 510 M500 400 L530 510 M700 400 L760 510 M-10 446 H810"/>
+    <path d="M52 140 V70 Q95 30 138 70 V140Z" fill="#f6e9b8"/><path d="M44 140 H146" stroke-width="5"/>
+    <path d="M300 400 V342 M620 400 V342" stroke-width="6" stroke="#6b4a35"/><path d="M280 402 H320 M600 402 H640" stroke-width="6" stroke="#6b4a35"/>
+    <path d="M480 -10 V138" stroke-width="2" stroke-dasharray="6 5"/>
+    <path d="M690 400 V236 H750 V400Z" fill="#b5a685"/><path d="M680 236 H760 L752 220 H688Z" fill="#a39474"/>
+  </g>
+  ${stoneLamps([[346, 60], [400, 52], [454, 60]])}
+  ${seg(P1, P2, 1)}${seg(P2, P3, 2)}${seg(P3, P4, 3)}${seg(P4, P5, 4)}
+  ${mirror(300, 334, 1, -8)}${mirror(480, 146, 2, 0)}${mirror(620, 334, 3, 12)}
+  <g class="treasure"><circle cx="720" cy="190" r="60" fill="url(#gold)"/></g>
+  <g ${A}><path class="crystal" d="M720 158 L742 190 L720 222 L698 190Z" fill="#9cc0c4"/><path class="thin" d="M720 158 V222 M698 190 H742"/></g>
+  ${mapPiece(720, 96)}
+  ${explorer(150, 426)}${beetle(214, 440)}</svg>`;
+}
+
+const SCENES = { zooTor, zooBecken, zooBahn, zooKiosk, zooVoliere, expTor, expBruecke, expWaage, expBoot, expSpiegel };
 export const sceneSvg = (id) => SCENES[id]();
 
 // ---------- Weltkarten ----------
@@ -322,10 +448,14 @@ const ICONS = {
   expTor: '<path d="M-20 22 V-4 Q0 -32 20 -4 V22Z" fill="#5a4e42"/><path d="M0 -6 l3 7 7 .6 -5.4 4.6 1.8 7 -6.4 -4 -6.4 4 1.8 -7 -5.4 -4.6 7 -.6Z" fill="#c9a24a" stroke-width="1.2"/>',
   expBruecke: '<path d="M-28 -8 Q0 14 28 -8 M-28 6 Q0 30 28 6 M-16 0 V14 M-5 5 V20 M6 5 V20 M17 0 V13" stroke-width="2.6"/>',
   expWaage: '<path d="M0 -22 V20 M-24 -16 H24 M-12 22 H12" stroke-width="3"/><path d="M-24 -16 l-9 18 h18Z M24 -16 l-9 18 h18Z" fill="#c9a24a"/>',
+  zooKiosk: '<path d="M-22 22 V-4 H22 V22Z" fill="#c9b07a"/><path d="M-26 -4 L-20 -20 H20 L26 -4Z" fill="#c9584e"/><path d="M-10 -20 L-12 -4 M0 -20 V-4 M10 -20 L12 -4" stroke-width="1.6"/><rect x="-12" y="2" width="24" height="12" fill="#3d3530"/>',
+  zooVoliere: '<path d="M-22 22 V-2 Q-22 -26 0 -26 Q22 -26 22 -2 V22Z M-11 22 V-20 M0 22 V-26 M11 22 V-20 M-22 4 H22" stroke-width="2.4"/><circle cx="0" cy="-30" r="3" fill="#c9a24a"/>',
+  expBoot: '<path d="M-26 6 Q-22 22 -10 22 H10 Q22 22 26 6Z" fill="#8a6a3c"/><path d="M0 6 V-26" stroke-width="3"/><path d="M3 -22 Q24 -8 3 4Z" fill="#efe3b4"/>',
+  expSpiegel: '<circle r="9" fill="#f2c14a"/><path d="M0 -24 V-15 M0 24 V15 M-24 0 H-15 M24 0 H15 M-17 -17 L-11 -11 M17 17 L11 11 M-17 17 L-11 11 M17 -17 L11 -11" stroke-width="2.6"/>',
   lock: '<rect x="-12" y="-4" width="24" height="20" rx="4" fill="#8d7f63"/><path d="M-7 -4 V-11 Q0 -20 7 -11 V-4" stroke-width="3"/>',
   soon: '<path d="M-7 -10 Q0 -22 8 -12 Q10 -4 0 2 V8" stroke-width="3.5"/><circle cx="0" cy="17" r="2.4" fill="#3b2f24"/>',
 };
-const POS = [[150, 335], [335, 205], [525, 318], [668, 178], [730, 372]];
+const POS = [[150, 335], [335, 205], [520, 318], [650, 170], [672, 372]];
 
 export const badge = (sceneId) => `<svg class="badge" viewBox="-56 -56 112 112" aria-hidden="true"><g ${A}><circle r="48" fill="#e9dcb6"/>${ICONS[sceneId]}</g></svg>`;
 
@@ -342,7 +472,7 @@ export function mapSvg(world, title, nodes) {
         <path d="M590 92 l40 -64 l34 50 l22 -30 l40 64Z" fill="#a9a58a"/><path class="thin" d="M630 28 l-8 22 l12 -6 M686 48 l-6 18"/>
         ${[[40, 250], [300, 476], [230, 110], [460, 140], [640, 478], [775, 250]].map(([x, y]) => `<path d="M${x} ${y} v-34 M${x} ${y - 34} q-18 -10 -26 4 M${x} ${y - 34} q18 -10 26 4 M${x} ${y - 34} q-6 -18 -22 -14 M${x} ${y - 34} q6 -18 22 -14" stroke="#4c5f3c" stroke-width="2.4"/>`).join('')}
         <g transform="translate(92,84)"><circle r="34" fill="none" stroke-width="1.6"/><path d="M0 -42 L7 0 L0 42 L-7 0Z" fill="#c9584e" fill-opacity=".8"/><path d="M-42 0 L0 -7 L42 0 L0 7Z" fill="#efdfae"/></g>
-        <path d="M764 452 l16 16 M780 452 l-16 16" stroke="#c9584e" stroke-width="4"/></g>`;
+        </g>`;
   const nodeSvg = nodes.map((n, i) => {
     const [x, y] = POS[i];
     const state = n.soon ? 'soon' : n.locked ? 'locked' : 'open';

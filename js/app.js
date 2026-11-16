@@ -138,7 +138,6 @@ function renderMap() {
     locked: i > 0 && rounds(i - 1) === 0,
     due: rounds(i) > 0 && topicIds(i).some((id) => isDue(P.skills[id], now)),
   }));
-  nodes.push({ name: 'Bald mehr', soon: true }, { name: 'Bald mehr', soon: true });
   const today = P.log[dayKey(now)];
   const next = nodes.findIndex((n) => !n.locked && !n.soon && n.stars === 0);
   const tip = next >= 0 ? `Weiter geht es hier: ${w.places[next].name}.`
@@ -270,6 +269,48 @@ function renderInput() {
     $$('.choice', area).forEach((b) => (b.onclick = () => submitAnswer(b.dataset.v, b)));
     return setKeys((e) => { const c = t.choices.find((x) => x.value === e.key); if (c) submitAnswer(c.value, area.querySelector(`[data-v="${CSS.escape(c.value)}"]`)); });
   }
+  if (t.input === 'tapline') {
+    session.sel = null;
+    $$('.tick').forEach((x) => x.classList.remove('sel'));
+    area.innerHTML = '<button class="btn primary big" id="ok" disabled>Prüfen</button>';
+    $$('.tick').forEach((g) => (g.onclick = () => {
+      if (session.locked) return;
+      session.sel = Number(g.dataset.v);
+      $$('.tick').forEach((x) => x.classList.toggle('sel', x === g));
+      $('#ok').disabled = false;
+    }));
+    $('#ok').onclick = () => submitAnswer(session.sel);
+    return setKeys((e) => { if (e.key === 'Enter' && session.sel !== null) submitAnswer(session.sel); });
+  }
+  if (t.input === 'order') {
+    session.sel = [];
+    const draw = () => {
+      const full = session.sel.length === t.items.length;
+      area.innerHTML = `<div class="slots">${t.items.map((_, i) => `<span class="slot${session.sel[i] !== undefined ? ' full' : ''}">${session.sel[i] !== undefined ? fmt(session.sel[i]) : ''}</span>`).join(`<span class="lt">${t.desc ? '>' : '<'}</span>`)}</div>
+        <div class="tablets">${t.items.map((v) => `<button class="tablet" data-v="${v}" ${session.sel.includes(v) ? 'disabled' : ''}>${fmt(v)}</button>`).join('')}</div>
+        <div class="row-btns"><button class="btn" id="undo" ${session.sel.length ? '' : 'disabled'}>Zurück</button><button class="btn primary big" id="ok" ${full ? '' : 'disabled'}>Prüfen</button></div>`;
+      $$('.tablet', area).forEach((b) => (b.onclick = () => { if (session.locked) return; session.sel.push(Number(b.dataset.v)); tone('tick'); draw(); }));
+      $('#undo').onclick = () => { if (session.locked) return; session.sel.pop(); draw(); };
+      $('#ok').onclick = () => submitAnswer([...session.sel]);
+    };
+    draw();
+    return setKeys((e) => { if (e.key === 'Enter' && session.sel.length === t.items.length) submitAnswer([...session.sel]); });
+  }
+  if (t.input === 'coins') {
+    session.sel = [];
+    const lab = (d) => (d >= 100 ? `${d / 100} €` : `${d} ct`);
+    const cls = (d) => (d >= 500 ? 'note' : d >= 100 ? 'coin gold big' : d >= 10 ? 'coin gold' : 'coin copper');
+    const draw = () => {
+      area.innerHTML = `<div class="tray money">${session.sel.map((d, i) => `<button class="${cls(d)}" data-i="${i}" aria-label="${lab(d)} wegnehmen">${lab(d)}</button>`).join('')}</div>
+        <div class="purse money">${t.denoms.map((d) => `<button class="${cls(d)}" data-d="${d}">${lab(d)}</button>`).join('')}</div>
+        <button class="btn primary big" id="ok" ${session.sel.length ? '' : 'disabled'}>Prüfen</button>`;
+      $$('.purse button', area).forEach((b) => (b.onclick = () => { if (session.locked || session.sel.length >= 14) return; session.sel.push(Number(b.dataset.d)); tone('tick'); draw(); }));
+      $$('.tray button', area).forEach((b) => (b.onclick = () => { if (session.locked) return; session.sel.splice(Number(b.dataset.i), 1); draw(); }));
+      $('#ok').onclick = () => submitAnswer(session.sel.reduce((a, b) => a + b, 0));
+    };
+    draw();
+    return setKeys(null);
+  }
   const money = t.input === 'money';
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', money ? ',' : '', '0', '⌫'];
   area.innerHTML = `<div class="answer-row"><div class="display" id="display">&nbsp;</div>${money ? '<span class="unit">€</span>' : t.unit ? `<span class="unit">${esc(t.unit)}</span>` : ''}</div>
@@ -348,7 +389,8 @@ function submitSchema(btn) {
 function submitAnswer(given, btn) {
   if (session.locked) return;
   const t = session.task;
-  if (t.input !== 'choice' && String(given).trim() === '') return;
+  if ((t.input === 'number' || t.input === 'money') && String(given).trim() === '') return;
+  const special = ['tapline', 'order', 'coins'].includes(t.input);
   if (check(t, given)) {
     const firstTry = session.attempt === 1 && session.mistakes === 0;
     btn?.classList.add('right');
@@ -362,11 +404,13 @@ function submitAnswer(given, btn) {
   if (session.attempt === 1) {
     session.attempt = 2;
     session.entry = '';
-    press('');
-    return feedback(`<b>Fast!</b> ${esc(t.hint.text)}${t.hint.visual ? renderVisual(t.hint.visual) : ''}<br>Versuch es nochmal.`, 'hint');
+    const laid = t.input === 'coins' ? `Du hast ${euro(given)} gelegt. ` : '';
+    if (special) renderInput(); else press('');
+    return feedback(`<b>Fast!</b> ${laid}${esc(t.hint.text)}${t.hint.visual ? renderVisual(t.hint.visual) : ''}<br>Versuch es nochmal.`, 'hint');
   }
   finishTask(false);
-  const correct = t.input === 'money' ? euro(t.answer) : t.input === 'choice' ? t.answer : fmt(t.answer);
+  const correct = t.input === 'money' || t.input === 'coins' ? euro(t.answer) : t.input === 'choice' ? t.answer : t.input === 'order' ? t.answer.map(fmt).join(t.desc ? ' > ' : ' < ') : fmt(t.answer);
+  if (t.input === 'tapline') $$('.tick').forEach((x) => x.classList.toggle('sel', Number(x.dataset.v) === t.answer));
   feedback(`Richtig ist: <b>${esc(correct)}</b><br>So geht's: ${esc(t.solution)}<br><small>${pick(Math.random, ENCOURAGE)}</small>`, 'show');
   showNext();
 }

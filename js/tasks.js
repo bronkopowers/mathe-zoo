@@ -574,6 +574,8 @@ export function parseMoney(str) {
 
 export function check(task, given) {
   if (task.input === 'choice') return given === task.answer;
+  if (task.input === 'order') return Array.isArray(given) && given.length === task.answer.length && given.every((v, i) => v === task.answer[i]);
+  if (task.input === 'coins' || task.input === 'tapline') return given !== null && given !== '' && Number(given) === task.answer;
   if (task.input === 'money') return parseMoney(given) === task.answer;
   return String(given).trim() !== '' && Number(given) === task.answer;
 }
